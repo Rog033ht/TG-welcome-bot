@@ -26,6 +26,10 @@ async def _run() -> None:
         token=settings.bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
+    # If this bot token was previously used elsewhere (webhook mode),
+    # long-polling won't receive updates until webhook is removed.
+    await bot.delete_webhook(drop_pending_updates=True)
+
     followups = FollowupService(db=db, settings=settings)
     bot["followups"] = followups
     broadcasts = BroadcastService(db=db, settings=settings)
