@@ -13,15 +13,14 @@ router = Router(name="start")
 
 
 @router.message(CommandStart())
-async def start_cmd(message: Message) -> None:
+async def start_cmd(message: Message, followups: FollowupService) -> None:
     settings = load_settings()
-    followups: FollowupService | None = message.bot.get("followups") if message.bot else None
 
     # Template A (instant)
     await message.answer(STR.WELCOME_A, disable_web_page_preview=True)
 
     # Schedule Template B (after 5 minutes)
-    if followups and message.from_user:
+    if message.from_user:
         await followups.enqueue_template_b(uid=message.from_user.id)
 
     text = f"{STR.WELCOME_TITLE}\n\n{STR.WELCOME_SUB}"

@@ -89,7 +89,7 @@ async def broadcast_new(message: Message) -> None:
 
 
 @router.message(Command("broadcast_run"))
-async def broadcast_run(message: Message) -> None:
+async def broadcast_run(message: Message, broadcasts: BroadcastService) -> None:
     """
     Usage:
       /broadcast_run 123
@@ -104,17 +104,12 @@ async def broadcast_run(message: Message) -> None:
         await message.answer("Invalid broadcast id.")
         return
 
-    svc: BroadcastService | None = message.bot.get("broadcasts") if message.bot else None
-    if not svc:
-        await message.answer("Broadcast service not ready.")
-        return
-
-    await svc.start_or_resume(bot=message.bot, broadcast_id=broadcast_id)
+    await broadcasts.start_or_resume(bot=message.bot, broadcast_id=broadcast_id)
     await message.answer(f"▶️ Running broadcast <code>{broadcast_id}</code> (throttle: {load_settings().broadcast_rps}/sec)")
 
 
 @router.message(Command("broadcast_pause"))
-async def broadcast_pause(message: Message) -> None:
+async def broadcast_pause(message: Message, broadcasts: BroadcastService) -> None:
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) < 2:
         await message.answer("Usage: <code>/broadcast_pause BROADCAST_ID</code>")
@@ -125,11 +120,7 @@ async def broadcast_pause(message: Message) -> None:
         await message.answer("Invalid broadcast id.")
         return
 
-    svc: BroadcastService | None = message.bot.get("broadcasts") if message.bot else None
-    if not svc:
-        await message.answer("Broadcast service not ready.")
-        return
-    await svc.pause(broadcast_id)
+    await broadcasts.pause(broadcast_id)
     await message.answer(f"⏸ Paused broadcast <code>{broadcast_id}</code> (pwede i-resume via /broadcast_run).")
 
 

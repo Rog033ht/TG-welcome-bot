@@ -31,11 +31,12 @@ async def _run() -> None:
     await bot.delete_webhook(drop_pending_updates=True)
 
     followups = FollowupService(db=db, settings=settings)
-    bot["followups"] = followups
     broadcasts = BroadcastService(db=db, settings=settings)
-    bot["broadcasts"] = broadcasts
 
     dp = Dispatcher(storage=MemoryStorage())
+    # Store services in Dispatcher context (aiogram DI friendly)
+    dp["followups"] = followups
+    dp["broadcasts"] = broadcasts
 
     dp.update.middleware(UserTrackingMiddleware(db=db))
     dp.include_router(root_router)
