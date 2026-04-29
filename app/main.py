@@ -4,6 +4,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.exceptions import TelegramConflictError
+from loguru import logger
 
 from app.config import Settings, load_settings
 from app.db.sqlite import SqliteDatabase
@@ -44,7 +46,18 @@ async def _run() -> None:
     dp.include_router(root_router)
 
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        # Sometimes Railway redeploy can temporarily overlap with an older instance.
+        # Telegram then returns TelegramConflictError ("other getUpdates request").
+        # Retry polling on conflict to reduce downtime.
+        while True:
+            try:
+                await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+                break
+            except TelegramConflictError as e:
+                logger.error(
+                    f"TelegramConflictError: {e}. Retrying polling in 10 seconds (ensure only one instance runs)."
+                )
+                await asyncio.sleep(10)
     finally:
         await db.close()
         lock.release()

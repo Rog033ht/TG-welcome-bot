@@ -33,6 +33,33 @@ class Settings(BaseSettings):
     # Vote bot deep link target (defaults to this bot's username if blank)
     vote_bot_username: str = Field(default="", alias="VOTE_BOT_USERNAME")
 
+    # Common channels for publishing smart polls (admin-only).
+    # Format (comma-separated): "Label:ChatIdOrUsername,Label2:ChatIdOrUsername"
+    # Example: "Main:@my_channel,VIP:-1001234567890"
+    poll_common_channels_raw: str = Field(default="", alias="POLL_COMMON_CHANNELS")
+
+    @property
+    def poll_common_channels(self) -> list[tuple[str, str]]:
+        raw = (self.poll_common_channels_raw or "").strip()
+        if not raw:
+            return []
+        out: list[tuple[str, str]] = []
+        for item in raw.split(","):
+            item = item.strip()
+            if not item:
+                continue
+            if ":" in item:
+                label, chat = item.split(":", 1)
+                label = label.strip()
+                chat = chat.strip()
+            else:
+                label = item
+                chat = item
+            if not chat:
+                continue
+            out.append((label or chat, chat))
+        return out
+
     @property
     def admin_id_set(self) -> set[int]:
         raw = (self.admin_ids or "").strip()

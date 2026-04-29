@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, CallbackQuery
 
 from app.config import load_settings
 from app.db.sqlite import SqliteDatabase
@@ -26,6 +26,69 @@ class PollState(StatesGroup):
     base_a = State()
     base_b = State()
     end_after_minutes = State()
+
+
+def _build_poll_publish_keyboard(*, poll_id: str, channels: list[tuple[str, str]]) -> InlineKeyboardMarkup:
+    """
+    Create "choose a common channel" keyboard.
+    Callback data format: pollpub:<poll_id>:<target_chat>
+    """
+    rows: list[list[InlineKeyboardButton]] = []
+    for label, target_chat in channels:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=label,
+                    callback_data=f"pollpub:{poll_id}:{target_chat}",
+                )
+            ]
+        )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+async def _publish_poll_to_chat(*, bot, poll: dict, target_chat: str, vote_username: str) -> None:
+    """
+    Send the poll as a message (photo/video if asset exists, otherwise text).
+    """
+    from app.db.sqlite import SqliteDatabase  # local import to avoid circular-ish linting
+
+    poll_id = poll["poll_id"]
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Vote now", url=f"https://t.me/{vote_username}?start=vote_{poll_id}")]]
+    )
+
+    question = poll["question"]
+    base_a = poll["base_a"]
+    base_b = poll["base_b"]
+    end_at = poll.get("end_at")
+
+    text = (
+        f"📊 {question}\n\n"
+        f"A: {poll['option_a']} (base={base_a})\n"
+        f"B: {poll['option_b']} (base={base_b})"
+        + (f"\n\n⏱️ Voting ends at: {end_at}" if end_at else "")
+    )
+
+    asset_name = poll.get("asset_name")
+    if asset_name:
+        db2 = SqliteDatabase((load_settings()).db_url)
+        await db2.connect()
+        await db2.init_schema()
+        asset = await db2.get_asset(name=asset_name)
+        await db2.close()
+
+        if asset:
+            try:
+                if asset.get("file_type") == "photo":
+                    await bot.send_photo(chat_id=target_chat, photo=asset["file_id"], caption=text, reply_markup=kb)
+                    return
+                if asset.get("file_type") == "video":
+                    await bot.send_video(chat_id=target_chat, video=asset["file_id"], caption=text, reply_markup=kb)
+                    return
+            except Exception:
+                pass
+
+    await bot.send_message(chat_id=target_chat, text=text, reply_markup=kb, disable_web_page_preview=True)
 
 
 @router.message(Command("poll_create", ignore_mention=True))
@@ -241,6 +304,14 @@ async def poll_end_after_minutes(message: Message, state: FSMContext) -> None:
             disable_web_page_preview=True,
         )
 
+    # If common publish targets are configured, let admin pick one immediately.
+    channels = settings.poll_common_channels
+    if channels:
+        await message.answer(
+            "Choose a channel to publish this poll voting button:",
+            reply_markup=_build_poll_publish_keyboard(poll_id=poll_id, channels=channels),
+        )
+
 
 @router.message(Command("poll_publish", ignore_mention=True))
 async def poll_publish(message: Message) -> None:
@@ -342,4 +413,68 @@ async def poll_publish(message: Message) -> None:
         return
 
     await message.answer("Poll published successfully ✅")
+
+
+@router.message(Command("poll_channel_list", ignore_mention=True))
+async def poll_channel_list(message: Message) -> None:
+    settings = load_settings()
+    channels = settings.poll_common_channels
+    if not channels:
+        await message.answer(
+            "No common channels configured.\n\n"
+            "Set <code>POLL_COMMON_CHANNELS</code> in env, e.g.\n"
+            "<code>POLL_COMMON_CHANNELS=Main:@my_channel,VIP:-1001234567890</code>"
+        )
+        return
+
+    lines = ["Common channels (POLL_COMMON_CHANNELS):"]
+    for i, (label, target_chat) in enumerate(channels, start=1):
+        lines.append(f"{i}) {label}: <code>{target_chat}</code>")
+
+    await message.answer("\n".join(lines))
+
+
+@router.callback_query(F.data.startswith("pollpub:"))
+async def pollpub_callback(cb: CallbackQuery) -> None:
+    if not cb.from_user or not cb.data:
+        return
+
+    settings = load_settings()
+    if cb.from_user.id not in settings.admin_id_set:
+        await cb.answer("Admin only.", show_alert=True)
+        return
+
+    # pollpub:<poll_id>:<target_chat>
+    parts = cb.data.split(":", 2)
+    if len(parts) != 3:
+        await cb.answer("Invalid payload.", show_alert=True)
+        return
+
+    _, poll_id, target_chat = parts
+
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    poll = await db.get_smart_poll(poll_id=poll_id)
+    await db.close()
+
+    if not poll:
+        await cb.answer("Poll not found.", show_alert=True)
+        return
+
+    vote_username = (settings.vote_bot_username or "").strip()
+    if not vote_username:
+        me = await cb.bot.me()
+        vote_username = (me.username or "").strip() if me else ""
+
+    if not vote_username:
+        await cb.answer("Missing VOTE_BOT_USERNAME.", show_alert=True)
+        return
+
+    if not cb.message:
+        await cb.answer("Message context missing.", show_alert=True)
+        return
+
+    await _publish_poll_to_chat(bot=cb.bot, poll=poll, target_chat=target_chat, vote_username=vote_username)
+    await cb.answer("Published ✅", show_alert=False)
 
