@@ -6,19 +6,20 @@ from aiogram.types import Message
 
 from app.config import load_settings
 from app.keyboards import main_menu_kb
-from app.localization.strings import STR
+from app.localization.locales import t
 
 router = Router(name="start")
 
 
 @router.message(CommandStart())
-async def start_cmd(message: Message) -> None:
+async def start_cmd(message: Message, lang: str = "en") -> None:
     settings = load_settings()
 
-    text = f"{STR.WELCOME_TITLE}\n\n{STR.WELCOME_SUB}"
+    text = f"{t('WELCOME_TITLE', lang)}\n\n{t('WELCOME_SUB', lang)}"
     await message.answer(
         text,
         reply_markup=main_menu_kb(
+            lang=lang,
             groups_url=settings.groups_url,
             app_url=settings.app_url,
             official_bot_url=settings.official_bot_url,

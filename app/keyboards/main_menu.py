@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from app.localization.strings import STR
+from app.localization.locales import t
 
 
 def main_menu_kb(
     *,
+    lang: str,
     groups_url: str,
     app_url: str,
     official_bot_url: str,
@@ -14,10 +15,10 @@ def main_menu_kb(
 ) -> InlineKeyboardMarkup:
     # UI vibe: emoji + clear CTA links (matches screenshot style)
     rows = [
-        [InlineKeyboardButton(text=STR.BTN_GROUPS, url=groups_url)],
-        [InlineKeyboardButton(text=STR.BTN_APP, url=app_url)],
-        [InlineKeyboardButton(text=STR.BTN_OFFICIAL_BOT, url=official_bot_url)],
-        [InlineKeyboardButton(text=STR.BTN_SUPPORT, url=support_url)],
+        [InlineKeyboardButton(text=t("BTN_GROUPS", lang), url=groups_url)],
+        [InlineKeyboardButton(text=t("BTN_APP", lang), url=app_url)],
+        [InlineKeyboardButton(text=t("BTN_OFFICIAL_BOT", lang), url=official_bot_url)],
+        [InlineKeyboardButton(text=t("BTN_SUPPORT", lang), url=support_url)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

@@ -11,6 +11,7 @@ class UserUpsert:
     username: str | None
     full_name: str
     join_date: datetime
+    language_code: str = "en"
 
 
 class Database(ABC):
@@ -106,4 +107,7 @@ class Database(ABC):
 
     @abstractmethod
     async def list_users_after(self, *, after_uid: int, limit: int) -> list[int]: ...
+
+    @abstractmethod
+    async def get_user_language(self, *, uid: int) -> str: ...
 

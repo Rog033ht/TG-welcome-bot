@@ -11,6 +11,7 @@ from loguru import logger
 
 from app.config import Settings
 from app.db.base import Database
+from app.localization.locales import normalize_lang, t
 from app.utils.anti_spam import append_unique_suffix
 
 
@@ -151,8 +152,10 @@ class BroadcastService:
             logger.info(f"Broadcast job stop id={broadcast_id}")
 
     async def _send_one(self, *, bot: Bot, uid: int, asset: dict, caption: str) -> bool:
+        user_lang = normalize_lang(await self._db.get_user_language(uid=uid))
+        localized_caption = t(caption, user_lang) if caption in {"WELCOME_TITLE", "WELCOME_SUB", "POST_CTA"} else caption
         cap = append_unique_suffix(
-            caption,
+            localized_caption,
             enabled=self._settings.broadcast_unique_suffix,
             add_timestamp=True,
         )

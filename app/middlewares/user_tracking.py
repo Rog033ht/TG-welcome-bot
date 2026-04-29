@@ -7,6 +7,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject, User
 
 from app.db.base import Database, UserUpsert
+from app.localization.locales import normalize_lang
 
 
 class UserTrackingMiddleware(BaseMiddleware):
@@ -43,6 +44,7 @@ class UserTrackingMiddleware(BaseMiddleware):
                     username=u.username,
                     full_name=u.full_name,
                     join_date=join_date,
+                    language_code=normalize_lang(getattr(u, "language_code", None)),
                 )
             )
 

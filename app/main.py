@@ -8,7 +8,9 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from app.config import Settings, load_settings
 from app.db.sqlite import SqliteDatabase
 from app.handlers import router as root_router
+from app.middlewares.language import LanguageMiddleware
 from app.middlewares.user_tracking import UserTrackingMiddleware
+from app.services.broadcasts import BroadcastService
 from app.utils.logging import setup_logging
 from app.utils.process_lock import ProcessLock
 
@@ -35,7 +37,9 @@ async def _run() -> None:
     dp = Dispatcher(storage=MemoryStorage())
     # Store shared DB in Dispatcher context (aiogram DI friendly)
     dp["db"] = db
+    dp["broadcasts"] = BroadcastService(db=db, settings=settings)
 
+    dp.update.middleware(LanguageMiddleware())
     dp.update.middleware(UserTrackingMiddleware(db=db))
     dp.include_router(root_router)
 

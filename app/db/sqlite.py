@@ -49,10 +49,17 @@ class SqliteDatabase(Database):
               uid INTEGER PRIMARY KEY,
               username TEXT,
               full_name TEXT NOT NULL,
-              join_date TEXT NOT NULL
+              join_date TEXT NOT NULL,
+              language_code TEXT NOT NULL DEFAULT 'en'
             );
             """
         )
+        # Lightweight migration for older DB files
+        cur = await self._conn.execute("PRAGMA table_info(users);")
+        cols = [r[1] for r in await cur.fetchall()]
+        await cur.close()
+        if "language_code" not in cols:
+            await self._conn.execute("ALTER TABLE users ADD COLUMN language_code TEXT NOT NULL DEFAULT 'en';")
 
         await self._conn.execute(
             """
@@ -126,17 +133,19 @@ class SqliteDatabase(Database):
         assert self._conn is not None
         await self._conn.execute(
             """
-            INSERT INTO users (uid, username, full_name, join_date)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO users (uid, username, full_name, join_date, language_code)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(uid) DO UPDATE SET
               username=excluded.username,
-              full_name=excluded.full_name
+              full_name=excluded.full_name,
+              language_code=excluded.language_code
             """,
             (
                 user.uid,
                 user.username,
                 user.full_name,
                 user.join_date.isoformat(timespec="seconds"),
+                user.language_code,
             ),
         )
         await self._conn.commit()
@@ -363,4 +372,13 @@ class SqliteDatabase(Database):
         rows = await cur.fetchall()
         await cur.close()
         return [int(r[0]) for r in rows]
+
+    async def get_user_language(self, *, uid: int) -> str:
+        assert self._conn is not None
+        cur = await self._conn.execute("SELECT language_code FROM users WHERE uid = ? LIMIT 1", (uid,))
+        row = await cur.fetchone()
+        await cur.close()
+        if not row or not row[0]:
+            return "en"
+        return str(row[0]).lower()
 
