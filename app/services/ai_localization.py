@@ -185,7 +185,7 @@ def _generate_batch_sync(english_text: str, api_key: str, model: str, keys: tupl
     client = genai.Client(api_key=key)
     config = genai_types.GenerateContentConfig(safety_settings=_GEMINI_SAFETY)
     contents = _build_batch_prompt(english_text, keys)
-    max_attempts = 3
+    max_attempts = 1
     for attempt in range(max_attempts):
         try:
             resp = client.models.generate_content(model=model_id, contents=contents, config=config)
@@ -200,16 +200,9 @@ def _generate_batch_sync(english_text: str, api_key: str, model: str, keys: tupl
                 (text or "")[:240],
             )
         except ClientError as e:
-            if getattr(e, "code", None) == 429 and attempt < max_attempts - 1:
-                delay = _retry_delay_from_429(e)
-                logger.warning(
-                    "Gemini 429 on batch translate (attempt %s/%s), sleeping %.0fs then retry",
-                    attempt + 1,
-                    max_attempts,
-                    delay,
-                )
-                time.sleep(delay)
-                continue
+            if getattr(e, "code", None) == 429:
+                logger.warning("Gemini 429 on batch translate; fast-fail to fallback (no wait)")
+                return None
             logger.warning("Gemini batch ClientError: %s", e.message or e)
             return None
         except Exception:
