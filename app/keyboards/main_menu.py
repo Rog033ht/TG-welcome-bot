@@ -5,20 +5,21 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from app.localization.locales import t
 
 
-def main_menu_kb(
-    *,
-    lang: str,
-    groups_url: str,
-    app_url: str,
-    official_bot_url: str,
-    support_url: str,
-) -> InlineKeyboardMarkup:
-    # UI vibe: emoji + clear CTA links (matches screenshot style)
-    rows = [
-        [InlineKeyboardButton(text=t("BTN_GROUPS", lang), url=groups_url)],
-        [InlineKeyboardButton(text=t("BTN_APP", lang), url=app_url)],
-        [InlineKeyboardButton(text=t("BTN_OFFICIAL_BOT", lang), url=official_bot_url)],
-        [InlineKeyboardButton(text=t("BTN_SUPPORT", lang), url=support_url)],
-    ]
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-
+def main_menu_kb(*, lang: str) -> InlineKeyboardMarkup:
+    """Two-tap welcome: command list + demo post (callbacks, not URL flood)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=t("BTN_ALL_COMMANDS", lang),
+                    callback_data="menu:commands",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=t("BTN_DEMO_POST", lang),
+                    callback_data="menu:demo_post",
+                ),
+            ],
+        ]
+    )

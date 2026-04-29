@@ -7,9 +7,29 @@ from aiogram.types import CallbackQuery
 
 from app.config import Settings, load_settings
 from app.db.sqlite import SqliteDatabase
+from app.handlers.content import send_post_demo
+from app.localization.locales import t
 from app.localization.strings import STR
 
 router = Router(name="callbacks")
+
+
+@router.callback_query(F.data == "menu:commands")
+async def menu_commands(cb: CallbackQuery, lang: str = "en") -> None:
+    if not cb.message:
+        await cb.answer()
+        return
+    await cb.answer()
+    await cb.message.answer(t("HELP_COMMANDS", lang), disable_web_page_preview=True)
+
+
+@router.callback_query(F.data == "menu:demo_post")
+async def menu_demo_post(cb: CallbackQuery, lang: str = "en") -> None:
+    if not cb.message:
+        await cb.answer()
+        return
+    await cb.answer()
+    await send_post_demo(cb.message, lang=lang)
 
 
 @router.callback_query(F.data.startswith("cta:"))

@@ -38,11 +38,12 @@ class UserTrackingMiddleware(BaseMiddleware):
 
         if u:
             join_date = datetime.now(tz=timezone.utc)
+            display = (u.full_name or "").strip() or (u.username or "User")
             await self._db.upsert_user(
                 UserUpsert(
                     uid=u.id,
                     username=u.username,
-                    full_name=u.full_name,
+                    full_name=display,
                     join_date=join_date,
                     language_code=normalize_lang(getattr(u, "language_code", None)),
                 )

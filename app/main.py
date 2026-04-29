@@ -1,5 +1,7 @@
 import asyncio
 
+from loguru import logger
+
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -18,6 +20,15 @@ from app.utils.process_lock import ProcessLock
 async def _run() -> None:
     settings: Settings = load_settings()
     setup_logging(settings.log_level)
+    if (settings.gemini_api_key or "").strip():
+        logger.info(
+            "Gemini: GEMINI_API_KEY is set (model={}); campaign AI translations enabled.",
+            settings.gemini_model,
+        )
+    else:
+        logger.warning(
+            "Gemini: GEMINI_API_KEY missing or blank — /campaign_create PH/VI/TR/ES will mirror English.",
+        )
     lock = ProcessLock(key=settings.bot_token)
     if not lock.acquire():
         raise RuntimeError("Another bot instance is already running for this token.")

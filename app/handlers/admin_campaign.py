@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from aiogram import F, Router
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
@@ -12,7 +12,7 @@ from app.config import load_settings
 from app.db.sqlite import SqliteDatabase
 from app.filters import IsAdmin
 from app.localization.locales import term
-from app.services.ai_localization import generate_localized_content
+from app.services.ai_localization import generate_campaign_translations, non_en_locales_match_english
 
 router = Router(name="admin_campaign")
 router.message.filter(IsAdmin())
@@ -42,7 +42,7 @@ def _build_inline_keyboard(rows: list[list[dict]]) -> InlineKeyboardMarkup | Non
     return InlineKeyboardMarkup(inline_keyboard=output_rows)
 
 
-@router.message(Command("operator_help"))
+@router.message(Command("operator_help", ignore_mention=True))
 async def operator_help(message: Message) -> None:
     await message.answer(
         "<b>Operator Commands (English)</b>\n\n"
@@ -53,7 +53,7 @@ async def operator_help(message: Message) -> None:
     )
 
 
-@router.message(Command("ops_flow"))
+@router.message(Command("ops_flow", ignore_mention=True))
 async def ops_flow(message: Message) -> None:
     await message.answer(
         "<b>Operator Ops Flow (Fast)</b>\n\n"
@@ -86,7 +86,7 @@ def _guess_asset_from_reply(message: Message) -> tuple[str, str] | None:
     return None
 
 
-@router.message(Command("asset_save"))
+@router.message(Command("asset_save", ignore_mention=True))
 async def asset_save(message: Message) -> None:
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) < 2:
@@ -108,7 +108,7 @@ async def asset_save(message: Message) -> None:
     await message.answer(f"Asset saved: <b>{name}</b> ({file_type})")
 
 
-@router.message(Command("campaign_create"))
+@router.message(Command("campaign_create", ignore_mention=True))
 async def campaign_create(message: Message, state: FSMContext) -> None:
     await state.clear()
     await state.set_state(CampaignState.target_chat)
@@ -122,7 +122,7 @@ async def campaign_create(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(Command("campaign_cancel"))
+@router.message(Command("campaign_cancel", ignore_mention=True))
 async def campaign_cancel(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer("Campaign builder canceled.")
@@ -168,14 +168,14 @@ async def campaign_caption(message: Message, state: FSMContext) -> None:
     english_caption = (message.text or "").strip()
     settings = load_settings()
     translations: dict[str, str] = {"en": english_caption}
+    batch = await generate_campaign_translations(
+        english_caption,
+        locale_codes=tuple(LANG_PREVIEW_ORDER),
+        api_key=settings.gemini_api_key,
+        model=settings.gemini_model,
+    )
     for code in LANG_PREVIEW_ORDER:
-        translated = await generate_localized_content(
-            english_caption,
-            code,
-            api_key=settings.gemini_api_key,
-            model=settings.gemini_model,
-        )
-        translations[code] = translated
+        translations[code] = batch.get(code, english_caption)
 
     await state.update_data(caption=english_caption, english_caption=english_caption, translations=translations, selected_lang="en", button_rows=[[]])
     await state.set_state(CampaignState.buttons)
@@ -199,8 +199,21 @@ async def campaign_caption(message: Message, state: FSMContext) -> None:
         "• <code>/campaign_cancel</code> -> cancel"
     )
 
+    if not (settings.gemini_api_key or "").strip():
+        await message.answer(
+            "⚠️ <b>GEMINI_API_KEY</b> is not set — PH/VI/TR/ES blocks above are <b>English copies</b>. "
+            "Set the variable on Railway (or <code>.env</code> locally), redeploy, then run <code>/campaign_create</code> again."
+        )
+    elif non_en_locales_match_english(translations):
+        await message.answer(
+            "⚠️ Gemini did not return usable translations (all blocks still match English). "
+            "Common causes: <b>429 / free-tier quota</b> (wait ~1 min or enable billing in Google AI Studio), "
+            "safety blocks, or bad JSON from the model. "
+            "Check deploy logs; optional: change <code>GEMINI_MODEL</code> to another Gemini id that still has quota on your API key."
+        )
 
-@router.message(CampaignState.buttons, Command("use_lang"))
+
+@router.message(CampaignState.buttons, Command("use_lang", ignore_mention=True))
 async def campaign_use_lang(message: Message, state: FSMContext) -> None:
     parts = (message.text or "").split(maxsplit=1)
     if len(parts) < 2:
@@ -221,7 +234,16 @@ async def campaign_use_lang(message: Message, state: FSMContext) -> None:
     await message.answer(f"Caption language set to <b>{lang.upper()}</b>.")
 
 
-@router.message(CampaignState.buttons, Command("row"))
+@router.message(~StateFilter(CampaignState.buttons), Command("use_lang", ignore_mention=True))
+async def campaign_use_lang_wrong_step(message: Message) -> None:
+    await message.answer(
+        "⚠️ <code>/use_lang</code> only works in <b>campaign Step 4</b> (right after you send the English caption).\n\n"
+        "• If you have not started: <code>/campaign_create</code>\n"
+        "• If the bot / Railway just restarted: FSM is in-memory — run <code>/campaign_create</code> again from Step 1."
+    )
+
+
+@router.message(CampaignState.buttons, Command("row", ignore_mention=True))
 async def campaign_row(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     rows: list[list[dict]] = data.get("button_rows", [[]])
@@ -230,7 +252,7 @@ async def campaign_row(message: Message, state: FSMContext) -> None:
     await message.answer("Started a new button row.")
 
 
-@router.message(CampaignState.buttons, Command("done"))
+@router.message(CampaignState.buttons, Command("done", ignore_mention=True))
 async def campaign_done(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     rows: list[list[dict]] = data.get("button_rows", [[]])
@@ -278,7 +300,7 @@ async def campaign_add_button(message: Message, state: FSMContext) -> None:
     await message.answer(f"Added button: <b>{text}</b>")
 
 
-@router.message(CampaignState.confirm, Command("publish"))
+@router.message(CampaignState.confirm, Command("publish", ignore_mention=True))
 async def campaign_publish(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     target_chat = data.get("target_chat")

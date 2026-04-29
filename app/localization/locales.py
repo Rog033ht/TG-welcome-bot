@@ -11,7 +11,16 @@ _LANG_ALIASES: dict[str, str] = {
 LOCALES: dict[str, dict[str, str]] = {
     "en": {
         "WELCOME_TITLE": "Hi! Welcome to <b>Official Ecosystem</b>.",
-        "WELCOME_SUB": "For safety and legitimacy, use our official links below:",
+        "WELCOME_SUB": "Pick an action below — view all commands or try a sample post.",
+        "BTN_ALL_COMMANDS": "📋 All commands",
+        "BTN_DEMO_POST": "🔥 Sample post",
+        "HELP_COMMANDS": (
+            "<b>Commands</b>\n\n"
+            "<code>/start</code> — Welcome + this menu\n"
+            "<code>/post_demo</code> — Sample post with CTA button\n"
+            "<code>/spin</code> — Lucky spin (coming soon)\n\n"
+            "Tip: You can also tap the buttons under the welcome message."
+        ),
         "BTN_GROUPS": "👥 Groups / Community",
         "BTN_APP": "📲 App Download",
         "BTN_OFFICIAL_BOT": "🤖 Official Bot",
@@ -23,7 +32,16 @@ LOCALES: dict[str, dict[str, str]] = {
     },
     "ph": {
         "WELCOME_TITLE": "Hi! Welcome sa <b>Official Ecosystem</b>.",
-        "WELCOME_SUB": "Para safe at legit, dito ka na sa official links namin.\n\nPili ka lang sa menu below:",
+        "WELCOME_SUB": "Pili ka sa buttons below — tingnan lahat ng commands o subukan ang sample post.",
+        "BTN_ALL_COMMANDS": "📋 Lahat ng commands",
+        "BTN_DEMO_POST": "🔥 Sample post",
+        "HELP_COMMANDS": (
+            "<b>Commands</b>\n\n"
+            "<code>/start</code> — Welcome + menu na 'to\n"
+            "<code>/post_demo</code> — Sample post may CTA button\n"
+            "<code>/spin</code> — Lucky spin (soon pa)\n\n"
+            "Tip: Pwede mo rin i-tap yung buttons sa welcome message."
+        ),
         "BTN_GROUPS": "👥 Groups / Community",
         "BTN_APP": "📲 App Download",
         "BTN_OFFICIAL_BOT": "🤖 Official Bot",
@@ -35,7 +53,16 @@ LOCALES: dict[str, dict[str, str]] = {
     },
     "vi": {
         "WELCOME_TITLE": "Xin chao! Chao mung ban den voi <b>Official Ecosystem</b>.",
-        "WELCOME_SUB": "De an toan va chinh thong, vui long dung cac link chinh thuc ben duoi:",
+        "WELCOME_SUB": "Chon ben duoi: xem tat ca lenh hoac thu bai demo.",
+        "BTN_ALL_COMMANDS": "📋 Tat ca lenh",
+        "BTN_DEMO_POST": "🔥 Bai demo",
+        "HELP_COMMANDS": (
+            "<b>Lenh</b>\n\n"
+            "<code>/start</code> — Chao + menu nay\n"
+            "<code>/post_demo</code> — Bai mau co nut CTA\n"
+            "<code>/spin</code> — Vong quay (sap co)\n\n"
+            "Meo: Ban cung co the bam nut duoi tin chao."
+        ),
         "BTN_GROUPS": "👥 Nhom / Cong dong",
         "BTN_APP": "📲 Tai ung dung",
         "BTN_OFFICIAL_BOT": "🤖 Bot chinh thuc",
@@ -47,7 +74,16 @@ LOCALES: dict[str, dict[str, str]] = {
     },
     "es": {
         "WELCOME_TITLE": "Hola! Bienvenido a <b>Official Ecosystem</b>.",
-        "WELCOME_SUB": "Para mantenerte seguro, usa nuestros enlaces oficiales:",
+        "WELCOME_SUB": "Elige abajo: ver todos los comandos o probar un post de ejemplo.",
+        "BTN_ALL_COMMANDS": "📋 Todos los comandos",
+        "BTN_DEMO_POST": "🔥 Post de ejemplo",
+        "HELP_COMMANDS": (
+            "<b>Comandos</b>\n\n"
+            "<code>/start</code> — Bienvenida + este menu\n"
+            "<code>/post_demo</code> — Post de muestra con boton CTA\n"
+            "<code>/spin</code> — Ruleta (muy pronto)\n\n"
+            "Tip: Tambien puedes tocar los botones bajo el mensaje de bienvenida."
+        ),
         "BTN_GROUPS": "👥 Grupos / Comunidad",
         "BTN_APP": "📲 Descargar app",
         "BTN_OFFICIAL_BOT": "🤖 Bot oficial",
@@ -59,7 +95,16 @@ LOCALES: dict[str, dict[str, str]] = {
     },
     "tr": {
         "WELCOME_TITLE": "Merhaba! <b>Official Ecosystem</b>'e hos geldin.",
-        "WELCOME_SUB": "Guvenlik icin resmi linkleri kullan:",
+        "WELCOME_SUB": "Asagidan sec: tum komutlar veya ornek bir gonderi.",
+        "BTN_ALL_COMMANDS": "📋 Tum komutlar",
+        "BTN_DEMO_POST": "🔥 Ornek gonderi",
+        "HELP_COMMANDS": (
+            "<b>Komutlar</b>\n\n"
+            "<code>/start</code> — Hos geldin + bu menu\n"
+            "<code>/post_demo</code> — Ornek gonderi + CTA dugmesi\n"
+            "<code>/spin</code> — Sans carki (yakinda)\n\n"
+            "Ipucu: Hos geldin mesajinin altindaki dugmeleri de kullanabilirsin."
+        ),
         "BTN_GROUPS": "👥 Gruplar / Topluluk",
         "BTN_APP": "📲 Uygulamayi indir",
         "BTN_OFFICIAL_BOT": "🤖 Resmi bot",

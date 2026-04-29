@@ -12,10 +12,8 @@ from app.utils.anti_spam import append_unique_suffix
 router = Router(name="content")
 
 
-@router.message(Command("post_demo"))
-async def post_demo(message: Message, lang: str = "en") -> None:
-    # Placeholder for the future "Content Engine" broadcast system.
-    # For now, we send a sample post vibe + "Leave a Comment".
+async def send_post_demo(message: Message, *, lang: str) -> None:
+    """Sample post + CTA (used by /post_demo and main-menu callback)."""
     settings = load_settings()
     kb = post_cta_kb(lang=lang, button_id="leave_comment")
     caption = (
@@ -30,4 +28,9 @@ async def post_demo(message: Message, lang: str = "en") -> None:
         add_timestamp=True,
     )
     await message.answer(caption, reply_markup=kb, disable_web_page_preview=True)
+
+
+@router.message(Command("post_demo", ignore_mention=True))
+async def post_demo(message: Message, lang: str = "en") -> None:
+    await send_post_demo(message, lang=lang)
 
