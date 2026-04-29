@@ -11,6 +11,18 @@ from app.db.sqlite import SqliteDatabase
 router = Router(name="vote")
 
 
+def _parse_iso_datetime(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def _poll_id_from_start_text(text: str) -> str | None:
     # Deep-link format: /start vote_<poll_id>
     if not text:
@@ -40,12 +52,17 @@ async def vote_start_handler(message: Message) -> None:
     db = SqliteDatabase(settings.db_url)
     await db.connect()
     await db.init_schema()
+    poll = await db.get_smart_poll(poll_id=poll_id)
     result = await db.get_smart_poll_results(poll_id=poll_id)
     await db.close()
 
-    if not result:
+    if not poll or not result:
         await message.answer("Poll not found. It may be deleted or expired.")
         return
+
+    now = datetime.now(tz=timezone.utc)
+    end_at = _parse_iso_datetime(poll.get("end_at"))
+    is_closed = bool(end_at and now >= end_at)
 
     # If there is an asset saved, show it as the poll cover (photo/video).
     kb = InlineKeyboardMarkup(
@@ -92,7 +109,10 @@ async def vote_start_handler(message: Message) -> None:
                 pass
 
     await message.answer(
-        f"📊 {result['question']}\n\nA: {result['option_a']} ({result['count_a']})\nB: {result['option_b']} ({result['count_b']})",
+        f"📊 {result['question']}\n\n"
+        f"A: {result['option_a']} ({result['count_a']})\n"
+        f"B: {result['option_b']} ({result['count_b']})"
+        + (f"\n\n⏱️ Voting closed at: {end_at.isoformat(timespec='seconds')}" if is_closed else ""),
         reply_markup=kb,
     )
 
@@ -123,12 +143,25 @@ async def vote_callback(cb: CallbackQuery) -> None:
     db = SqliteDatabase(settings.db_url)
     await db.connect()
     await db.init_schema()
-    await db.upsert_smart_poll_vote(
-        poll_id=poll_id,
-        uid=cb.from_user.id,
-        option=option,
-        created_at=datetime.now(tz=timezone.utc),
-    )
+
+    poll = await db.get_smart_poll(poll_id=poll_id)
+    if not poll:
+        await db.close()
+        await cb.answer("Poll not found.", show_alert=True)
+        return
+
+    now = datetime.now(tz=timezone.utc)
+    end_at = _parse_iso_datetime(poll.get("end_at"))
+    is_closed = bool(end_at and now >= end_at)
+
+    if not is_closed:
+        await db.upsert_smart_poll_vote(
+            poll_id=poll_id,
+            uid=cb.from_user.id,
+            option=option,
+            created_at=now,
+        )
+
     result = await db.get_smart_poll_results(poll_id=poll_id)
     await db.close()
 
@@ -159,7 +192,10 @@ async def vote_callback(cb: CallbackQuery) -> None:
         f"B: {result['option_b']} ({result['count_b']})"
     )
 
-    await cb.answer("Noted boss ✅", show_alert=False)
+    if is_closed:
+        await cb.answer("Voting closed ⏱️", show_alert=True)
+    else:
+        await cb.answer("Noted boss ✅", show_alert=False)
 
     # Try to edit in place; if it fails, fall back to sending a new message.
     try:

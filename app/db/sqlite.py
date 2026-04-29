@@ -149,6 +149,7 @@ class SqliteDatabase(Database):
               option_b TEXT NOT NULL,
               base_a INTEGER NOT NULL,
               base_b INTEGER NOT NULL,
+              end_at TEXT,
               created_at TEXT NOT NULL
             );
             """
@@ -171,6 +172,8 @@ class SqliteDatabase(Database):
         await cur.close()
         if "asset_name" not in cols:
             await self._conn.execute("ALTER TABLE smart_polls ADD COLUMN asset_name TEXT;")
+        if "end_at" not in cols:
+            await self._conn.execute("ALTER TABLE smart_polls ADD COLUMN end_at TEXT;")
         await self._conn.commit()
 
     async def upsert_user(self, user: UserUpsert) -> None:
@@ -503,13 +506,14 @@ class SqliteDatabase(Database):
         option_b: str,
         base_a: int,
         base_b: int,
+        end_at: datetime | None,
         created_at: datetime,
     ) -> None:
         assert self._conn is not None
         await self._conn.execute(
             """
-            INSERT INTO smart_polls (poll_id, asset_name, question, option_a, option_b, base_a, base_b, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO smart_polls (poll_id, asset_name, question, option_a, option_b, base_a, base_b, end_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 poll_id,
@@ -519,6 +523,7 @@ class SqliteDatabase(Database):
                 option_b,
                 int(base_a),
                 int(base_b),
+                end_at.isoformat(timespec="seconds") if end_at else None,
                 created_at.isoformat(timespec="seconds"),
             ),
         )
@@ -528,7 +533,7 @@ class SqliteDatabase(Database):
         assert self._conn is not None
         cur = await self._conn.execute(
             """
-            SELECT poll_id, asset_name, question, option_a, option_b, base_a, base_b, created_at
+            SELECT poll_id, asset_name, question, option_a, option_b, base_a, base_b, end_at, created_at
             FROM smart_polls
             WHERE poll_id = ?
             LIMIT 1
@@ -547,7 +552,8 @@ class SqliteDatabase(Database):
             "option_b": row[4],
             "base_a": int(row[5]),
             "base_b": int(row[6]),
-            "created_at": row[7],
+            "end_at": row[7],
+            "created_at": row[8],
         }
 
     async def upsert_smart_poll_vote(

@@ -142,6 +142,7 @@ class Database(ABC):
         option_b: str,
         base_a: int,
         base_b: int,
+        end_at: datetime | None,
         created_at: datetime,
     ) -> None: ...
 

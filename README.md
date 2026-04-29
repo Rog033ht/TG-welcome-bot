@@ -130,6 +130,13 @@ Preview is built in the flow:
 - Add at least `BOT_TOKEN`
 - Add recommended variables listed above
 - If you use AI previews: add `GEMINI_API_KEY` (+ optional `GEMINI_MODEL`)
+ 
+#### Smart poll deep-link (WelcomeBot + VoteBot, Scheme B: shared SQLite)
+If you run a separate Vote bot/service for clicking votes:
+- Add `VOTE_BOT_USERNAME` (the Vote bot's @username, no `@`).
+- Ensure **both services share the same SQLite file**:
+  - Mount the same persistent volume at `/app/data` for both services.
+  - Keep `DB_URL=sqlite+aiosqlite:///./data/bot.sqlite3` (default) so they read/write the same `bot.sqlite3`.
 
 ### 6.3 Runtime settings
 - Replicas: `1` (important for polling bots)
