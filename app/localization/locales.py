@@ -15,11 +15,22 @@ LOCALES: dict[str, dict[str, str]] = {
         "BTN_ALL_COMMANDS": "📋 All commands",
         "BTN_DEMO_POST": "🔥 Sample post",
         "HELP_COMMANDS": (
-            "<b>Commands</b>\n\n"
-            "<code>/start</code> — Welcome + this menu\n"
+            "<b>What This Bot Can Do</b>\n\n"
+            "<b>User Commands</b>\n"
+            "<code>/start</code> — Welcome + quick menu\n"
             "<code>/post_demo</code> — Sample post with CTA button\n"
             "<code>/spin</code> — Lucky spin (coming soon)\n\n"
-            "Tip: You can also tap the buttons under the welcome message."
+            "<b>Operator Commands (Admin only)</b>\n"
+            "<code>/campaign_create</code> — Build and publish campaign posts\n"
+            "<code>/campaign_cancel</code> — Cancel active campaign flow\n"
+            "<code>/asset_save NAME</code> — Save replied photo/video for reuse\n"
+            "<code>/ops_flow</code> — Fast operation checklist\n"
+            "<code>/operator_help</code> — Operator command help\n"
+            "<code>/broadcast_new asset|caption</code> — Create broadcast job\n"
+            "<code>/broadcast_run ID</code> — Start/resume broadcast\n"
+            "<code>/broadcast_pause ID</code> — Pause broadcast\n"
+            "<code>/broadcast_status ID</code> — Check broadcast progress\n\n"
+            "Note: Operator commands work only for IDs in <code>ADMIN_IDS</code>."
         ),
         "BTN_GROUPS": "👥 Groups / Community",
         "BTN_APP": "📲 App Download",
@@ -36,11 +47,22 @@ LOCALES: dict[str, dict[str, str]] = {
         "BTN_ALL_COMMANDS": "📋 Lahat ng commands",
         "BTN_DEMO_POST": "🔥 Sample post",
         "HELP_COMMANDS": (
-            "<b>Commands</b>\n\n"
-            "<code>/start</code> — Welcome + menu na 'to\n"
-            "<code>/post_demo</code> — Sample post may CTA button\n"
+            "<b>Kayang Gawin ng Bot</b>\n\n"
+            "<b>User Commands</b>\n"
+            "<code>/start</code> — Welcome + quick menu\n"
+            "<code>/post_demo</code> — Sample post na may CTA button\n"
             "<code>/spin</code> — Lucky spin (soon pa)\n\n"
-            "Tip: Pwede mo rin i-tap yung buttons sa welcome message."
+            "<b>Operator Commands (Admin lang)</b>\n"
+            "<code>/campaign_create</code> — Gumawa at mag-publish ng campaign post\n"
+            "<code>/campaign_cancel</code> — Kanselahin ang campaign flow\n"
+            "<code>/asset_save NAME</code> — I-save ang ni-reply na photo/video\n"
+            "<code>/ops_flow</code> — Mabilis na ops checklist\n"
+            "<code>/operator_help</code> — Operator command help\n"
+            "<code>/broadcast_new asset|caption</code> — Gumawa ng broadcast job\n"
+            "<code>/broadcast_run ID</code> — Start/resume broadcast\n"
+            "<code>/broadcast_pause ID</code> — Pause broadcast\n"
+            "<code>/broadcast_status ID</code> — Tingnan ang progress\n\n"
+            "Note: Yung operator commands, gagana lang sa IDs na nasa <code>ADMIN_IDS</code>."
         ),
         "BTN_GROUPS": "👥 Groups / Community",
         "BTN_APP": "📲 App Download",
@@ -57,11 +79,22 @@ LOCALES: dict[str, dict[str, str]] = {
         "BTN_ALL_COMMANDS": "📋 Tat ca lenh",
         "BTN_DEMO_POST": "🔥 Bai demo",
         "HELP_COMMANDS": (
-            "<b>Lenh</b>\n\n"
-            "<code>/start</code> — Chao + menu nay\n"
+            "<b>Chuc Nang Bot</b>\n\n"
+            "<b>Lenh nguoi dung</b>\n"
+            "<code>/start</code> — Chao mung + menu nhanh\n"
             "<code>/post_demo</code> — Bai mau co nut CTA\n"
             "<code>/spin</code> — Vong quay (sap co)\n\n"
-            "Meo: Ban cung co the bam nut duoi tin chao."
+            "<b>Lenh operator (chi Admin)</b>\n"
+            "<code>/campaign_create</code> — Tao va dang bai campaign\n"
+            "<code>/campaign_cancel</code> — Huy campaign dang thao tac\n"
+            "<code>/asset_save NAME</code> — Luu photo/video da reply de tai su dung\n"
+            "<code>/ops_flow</code> — Checklist van hanh nhanh\n"
+            "<code>/operator_help</code> — Tro giup lenh operator\n"
+            "<code>/broadcast_new asset|caption</code> — Tao job broadcast\n"
+            "<code>/broadcast_run ID</code> — Chay/tiep tuc broadcast\n"
+            "<code>/broadcast_pause ID</code> — Tam dung broadcast\n"
+            "<code>/broadcast_status ID</code> — Xem tien do\n\n"
+            "Luu y: Lenh operator chi hoat dong voi ID trong <code>ADMIN_IDS</code>."
         ),
         "BTN_GROUPS": "👥 Nhom / Cong dong",
         "BTN_APP": "📲 Tai ung dung",
@@ -78,11 +111,22 @@ LOCALES: dict[str, dict[str, str]] = {
         "BTN_ALL_COMMANDS": "📋 Todos los comandos",
         "BTN_DEMO_POST": "🔥 Post de ejemplo",
         "HELP_COMMANDS": (
-            "<b>Comandos</b>\n\n"
-            "<code>/start</code> — Bienvenida + este menu\n"
-            "<code>/post_demo</code> — Post de muestra con boton CTA\n"
+            "<b>Funciones Del Bot</b>\n\n"
+            "<b>Comandos de usuario</b>\n"
+            "<code>/start</code> — Bienvenida + menu rapido\n"
+            "<code>/post_demo</code> — Post de ejemplo con boton CTA\n"
             "<code>/spin</code> — Ruleta (muy pronto)\n\n"
-            "Tip: Tambien puedes tocar los botones bajo el mensaje de bienvenida."
+            "<b>Comandos de operador (solo Admin)</b>\n"
+            "<code>/campaign_create</code> — Crear y publicar campana\n"
+            "<code>/campaign_cancel</code> — Cancelar flujo de campana\n"
+            "<code>/asset_save NAME</code> — Guardar foto/video respondido para reutilizar\n"
+            "<code>/ops_flow</code> — Checklist operativo rapido\n"
+            "<code>/operator_help</code> — Ayuda de comandos operador\n"
+            "<code>/broadcast_new asset|caption</code> — Crear trabajo de broadcast\n"
+            "<code>/broadcast_run ID</code> — Iniciar/reanudar broadcast\n"
+            "<code>/broadcast_pause ID</code> — Pausar broadcast\n"
+            "<code>/broadcast_status ID</code> — Ver progreso\n\n"
+            "Nota: Los comandos de operador solo funcionan para IDs en <code>ADMIN_IDS</code>."
         ),
         "BTN_GROUPS": "👥 Grupos / Comunidad",
         "BTN_APP": "📲 Descargar app",
@@ -99,11 +143,22 @@ LOCALES: dict[str, dict[str, str]] = {
         "BTN_ALL_COMMANDS": "📋 Tum komutlar",
         "BTN_DEMO_POST": "🔥 Ornek gonderi",
         "HELP_COMMANDS": (
-            "<b>Komutlar</b>\n\n"
-            "<code>/start</code> — Hos geldin + bu menu\n"
-            "<code>/post_demo</code> — Ornek gonderi + CTA dugmesi\n"
+            "<b>Bot Ozellikleri</b>\n\n"
+            "<b>Kullanici komutlari</b>\n"
+            "<code>/start</code> — Hos geldin + hizli menu\n"
+            "<code>/post_demo</code> — CTA dugmeli ornek gonderi\n"
             "<code>/spin</code> — Sans carki (yakinda)\n\n"
-            "Ipucu: Hos geldin mesajinin altindaki dugmeleri de kullanabilirsin."
+            "<b>Operator komutlari (sadece Admin)</b>\n"
+            "<code>/campaign_create</code> — Kampanya gonderisi olustur ve yayinla\n"
+            "<code>/campaign_cancel</code> — Aktif kampanya akisina son ver\n"
+            "<code>/asset_save NAME</code> — Yanitlanan foto/video kaydet\n"
+            "<code>/ops_flow</code> — Hizli operasyon akisi\n"
+            "<code>/operator_help</code> — Operator komut yardimi\n"
+            "<code>/broadcast_new asset|caption</code> — Broadcast isi olustur\n"
+            "<code>/broadcast_run ID</code> — Broadcast baslat/devam et\n"
+            "<code>/broadcast_pause ID</code> — Broadcast duraklat\n"
+            "<code>/broadcast_status ID</code> — Ilerlemeyi gor\n\n"
+            "Not: Operator komutlari yalnizca <code>ADMIN_IDS</code> icindeki ID'lerde calisir."
         ),
         "BTN_GROUPS": "👥 Gruplar / Topluluk",
         "BTN_APP": "📲 Uygulamayi indir",
