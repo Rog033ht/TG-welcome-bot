@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 from urllib.parse import urlparse
 
 import aiosqlite
@@ -125,6 +126,17 @@ class SqliteDatabase(Database):
             """
             CREATE INDEX IF NOT EXISTS idx_broadcasts_status
             ON broadcasts (status);
+            """
+        )
+        await self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS campaign_templates (
+              name TEXT PRIMARY KEY,
+              caption TEXT NOT NULL,
+              buttons_json TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
             """
         )
         await self._conn.commit()
@@ -381,4 +393,66 @@ class SqliteDatabase(Database):
         if not row or not row[0]:
             return "en"
         return str(row[0]).lower()
+
+    async def save_campaign_template(
+        self,
+        *,
+        name: str,
+        caption: str,
+        button_rows: list[list[dict]],
+        created_at: datetime,
+    ) -> None:
+        assert self._conn is not None
+        now = created_at.isoformat(timespec="seconds")
+        buttons_json = json.dumps(button_rows, ensure_ascii=False)
+        await self._conn.execute(
+            """
+            INSERT INTO campaign_templates (name, caption, buttons_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+              caption=excluded.caption,
+              buttons_json=excluded.buttons_json,
+              updated_at=excluded.updated_at
+            """,
+            (name, caption, buttons_json, now, now),
+        )
+        await self._conn.commit()
+
+    async def get_campaign_template(self, *, name: str) -> dict | None:
+        assert self._conn is not None
+        cur = await self._conn.execute(
+            """
+            SELECT name, caption, buttons_json, updated_at
+            FROM campaign_templates
+            WHERE name = ?
+            LIMIT 1
+            """,
+            (name,),
+        )
+        row = await cur.fetchone()
+        await cur.close()
+        if not row:
+            return None
+        try:
+            rows = json.loads(row[2])
+            if not isinstance(rows, list):
+                rows = []
+        except Exception:
+            rows = []
+        return {"name": row[0], "caption": row[1], "button_rows": rows, "updated_at": row[3]}
+
+    async def list_campaign_templates(self, *, limit: int = 20) -> list[dict]:
+        assert self._conn is not None
+        cur = await self._conn.execute(
+            """
+            SELECT name, updated_at
+            FROM campaign_templates
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = await cur.fetchall()
+        await cur.close()
+        return [{"name": r[0], "updated_at": r[1]} for r in rows]
 

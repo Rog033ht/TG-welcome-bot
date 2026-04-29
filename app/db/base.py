@@ -111,3 +111,20 @@ class Database(ABC):
     @abstractmethod
     async def get_user_language(self, *, uid: int) -> str: ...
 
+    # Campaign template (caption + buttons)
+    @abstractmethod
+    async def save_campaign_template(
+        self,
+        *,
+        name: str,
+        caption: str,
+        button_rows: list[list[dict]],
+        created_at: datetime,
+    ) -> None: ...
+
+    @abstractmethod
+    async def get_campaign_template(self, *, name: str) -> dict | None: ...
+
+    @abstractmethod
+    async def list_campaign_templates(self, *, limit: int = 20) -> list[dict]: ...
+

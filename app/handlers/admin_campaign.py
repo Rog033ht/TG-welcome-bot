@@ -42,12 +42,37 @@ def _build_inline_keyboard(rows: list[list[dict]]) -> InlineKeyboardMarkup | Non
     return InlineKeyboardMarkup(inline_keyboard=output_rows)
 
 
+async def _send_campaign_preview(message: Message, state: FSMContext) -> None:
+    data = await state.get_data()
+    rows: list[list[dict]] = [row for row in data.get("button_rows", []) if row]
+    kb = _build_inline_keyboard(rows)
+    caption = data.get("caption", "")
+    asset = data.get("asset")
+
+    await state.update_data(button_rows=rows)
+    await state.set_state(CampaignState.confirm)
+    await message.answer(
+        "<b>Step 5/5: Preview ready</b>\n\n"
+        "If this looks good, send <code>/publish</code>.\n"
+        "If you need to restart, send <code>/campaign_cancel</code>."
+    )
+    if asset and asset.get("file_type") == "photo":
+        await message.answer_photo(photo=asset["file_id"], caption=caption, reply_markup=kb)
+    elif asset and asset.get("file_type") == "video":
+        await message.answer_video(video=asset["file_id"], caption=caption, reply_markup=kb)
+    else:
+        await message.answer(caption, reply_markup=kb, disable_web_page_preview=True)
+
+
 @router.message(Command("operator_help", ignore_mention=True))
 async def operator_help(message: Message) -> None:
     await message.answer(
         "<b>Operator Commands (English)</b>\n\n"
         "• <code>/campaign_create</code> - Create a channel promotion post (guided)\n"
         "• <code>/asset_save NAME</code> - Save replied photo/video as reusable file_id\n"
+        "• <code>/template_save NAME</code> - Save current caption + buttons as template\n"
+        "• <code>/template_apply NAME</code> - Apply template in Step 3/4 (after asset)\n"
+        "• <code>/template_list</code> - List available templates\n"
         "• <code>/campaign_cancel</code> - Cancel active builder flow\n\n"
         "Tip: Use <code>/campaign_create</code> for fast channel campaign posting."
     )
@@ -61,11 +86,10 @@ async def ops_flow(message: Message) -> None:
         "   Reply to photo/video -> <code>/asset_save promo1</code>\n"
         "2) Build campaign:\n"
         "   <code>/campaign_create</code>\n"
-        "3) Enter target, asset, English draft\n"
-        "4) AI gives PH/VI/TR/ES previews\n"
-        "5) Choose language via <code>/use_lang ph</code> (or vi/tr/es/en)\n"
-        "6) Add CTA buttons (<code>Text | https://...</code>)\n"
-        "7) <code>/done</code> -> preview -> <code>/publish</code>\n\n"
+        "3) Option A: Enter English draft + buttons\n"
+        "4) Option B (faster): <code>/template_apply name</code> after Step 2\n"
+        "5) Save reusable template: <code>/template_save name</code>\n"
+        "6) <code>/done</code> -> preview -> <code>/publish</code>\n\n"
         "<b>CTA Suggestions</b>\n"
         f"EN: {term('core', 'JOIN_NOW', 'en')} | {term('sports', 'BEST_ODDS', 'en')}\n"
         f"PH: {term('core', 'JOIN_NOW', 'ph')} | {term('sports', 'BEST_ODDS', 'ph')}\n"
@@ -163,7 +187,7 @@ async def campaign_asset(message: Message, state: FSMContext) -> None:
     await message.answer("Step 3/5: Send campaign caption text (HTML allowed).")
 
 
-@router.message(CampaignState.caption, F.text)
+@router.message(CampaignState.caption, F.text & ~F.text.startswith("/"))
 async def campaign_caption(message: Message, state: FSMContext) -> None:
     english_caption = (message.text or "").strip()
     settings = load_settings()
@@ -254,33 +278,10 @@ async def campaign_row(message: Message, state: FSMContext) -> None:
 
 @router.message(CampaignState.buttons, Command("done", ignore_mention=True))
 async def campaign_done(message: Message, state: FSMContext) -> None:
-    data = await state.get_data()
-    rows: list[list[dict]] = data.get("button_rows", [[]])
-    rows = [row for row in rows if row]
-    kb = _build_inline_keyboard(rows)
-
-    await state.update_data(button_rows=rows)
-    await state.set_state(CampaignState.confirm)
-
-    preview_text = (
-        "<b>Step 5/5: Preview ready</b>\n\n"
-        "If this looks good, send <code>/publish</code>.\n"
-        "If you need to restart, send <code>/campaign_cancel</code>."
-    )
-    await message.answer(preview_text)
-
-    data = await state.get_data()
-    caption = data.get("caption", "")
-    asset = data.get("asset")
-    if asset and asset.get("file_type") == "photo":
-        await message.answer_photo(photo=asset["file_id"], caption=caption, reply_markup=kb)
-    elif asset and asset.get("file_type") == "video":
-        await message.answer_video(video=asset["file_id"], caption=caption, reply_markup=kb)
-    else:
-        await message.answer(caption, reply_markup=kb, disable_web_page_preview=True)
+    await _send_campaign_preview(message, state)
 
 
-@router.message(CampaignState.buttons, F.text)
+@router.message(CampaignState.buttons, F.text & ~F.text.startswith("/"))
 async def campaign_add_button(message: Message, state: FSMContext) -> None:
     raw = (message.text or "").strip()
     if "|" not in raw:
@@ -298,6 +299,74 @@ async def campaign_add_button(message: Message, state: FSMContext) -> None:
     rows[-1].append({"text": text, "url": url})
     await state.update_data(button_rows=rows)
     await message.answer(f"Added button: <b>{text}</b>")
+
+
+@router.message(Command("template_list", ignore_mention=True))
+async def template_list(message: Message) -> None:
+    settings = load_settings()
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    items = await db.list_campaign_templates(limit=50)
+    await db.close()
+    if not items:
+        await message.answer("No templates yet. Build one and save with <code>/template_save NAME</code>.")
+        return
+    lines = ["<b>Campaign Templates</b>"]
+    for item in items:
+        lines.append(f"• <code>{item['name']}</code>")
+    lines.append("\nUse in campaign Step 3/4: <code>/template_apply NAME</code>")
+    await message.answer("\n".join(lines))
+
+
+@router.message(Command("template_save", ignore_mention=True))
+async def template_save(message: Message, state: FSMContext) -> None:
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Usage: <code>/template_save NAME</code>")
+        return
+    name = parts[1].strip().lower()
+    data = await state.get_data()
+    caption = str(data.get("caption") or "").strip()
+    rows: list[list[dict]] = [row for row in data.get("button_rows", []) if row]
+    if not caption:
+        await message.answer("No active campaign content found. Build one first, then save template.")
+        return
+    settings = load_settings()
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    await db.save_campaign_template(
+        name=name,
+        caption=caption,
+        button_rows=rows,
+        created_at=datetime.now(tz=timezone.utc),
+    )
+    await db.close()
+    await message.answer(f"Template saved: <b>{name}</b> ({sum(len(r) for r in rows)} buttons)")
+
+
+@router.message(CampaignState.caption, Command("template_apply", ignore_mention=True))
+@router.message(CampaignState.buttons, Command("template_apply", ignore_mention=True))
+async def template_apply(message: Message, state: FSMContext) -> None:
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Usage: <code>/template_apply NAME</code>")
+        return
+    name = parts[1].strip().lower()
+    settings = load_settings()
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    tpl = await db.get_campaign_template(name=name)
+    await db.close()
+    if not tpl:
+        await message.answer("Template not found. Check <code>/template_list</code>.")
+        return
+    rows = [row for row in tpl.get("button_rows", []) if row]
+    await state.update_data(caption=tpl["caption"], button_rows=rows, selected_lang="template")
+    await message.answer(f"Template applied: <b>{name}</b>")
+    await _send_campaign_preview(message, state)
 
 
 @router.message(CampaignState.confirm, Command("publish", ignore_mention=True))
