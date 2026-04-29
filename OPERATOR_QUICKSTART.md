@@ -7,6 +7,8 @@ Fast daily-use guide for campaign operators.
 - You are included in `ADMIN_IDS` (Railway variable)
 - Bot is added as admin in target channel (can post messages)
 - Bot is online in Railway
+- Railway service **Replicas = 1** (polling bots)
+- Optional AI previews: set `GEMINI_API_KEY` (+ `GEMINI_MODEL` if you want)
 
 ---
 
@@ -74,6 +76,13 @@ Cancel anytime:
 ---
 
 ## 6) Common issues
+
+- **New token rollout (recommended if bot feels “dead”)**
+  1) Stop any local bot runs
+  2) Ensure only ONE Railway service uses the token
+  3) Update Railway `BOT_TOKEN` to the new token
+  4) Redeploy
+  5) Revoke the old token in BotFather
 
 - **Asset not found**
   - You did not save it first with `/asset_save NAME`

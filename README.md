@@ -58,6 +58,10 @@ See `.env.example` for full list.
 ### Required
 - `BOT_TOKEN`
 
+### AI localization (optional but recommended for `/campaign_create` previews)
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (default in code: `gemini-2.0-flash`)
+
 ### Recommended
 - `ADMIN_IDS=123456789,987654321`
 - `GROUPS_URL=https://t.me/...`
@@ -125,6 +129,7 @@ Preview is built in the flow:
 ### 6.2 Set variables in Railway
 - Add at least `BOT_TOKEN`
 - Add recommended variables listed above
+- If you use AI previews: add `GEMINI_API_KEY` (+ optional `GEMINI_MODEL`)
 
 ### 6.3 Runtime settings
 - Replicas: `1` (important for polling bots)
@@ -133,6 +138,21 @@ Preview is built in the flow:
 ### 6.4 Verify
 - In Telegram: send `/start`
 - In Railway logs: should show `Start polling`
+
+### 6.5 Rotating bot token (most reliable MVP fix for conflicts)
+If you generated a **new BotFather token**, do this in order:
+
+1. **Stop old pollers**
+   - Stop local `python -m app`
+   - Remove/disable any second Railway service using the old token
+2. **Railway Variables**
+   - Update `BOT_TOKEN` to the new token
+   - Click **Redeploy**
+3. **Revoke old token** in BotFather (so nothing can accidentally poll with it)
+4. **Confirm single poller**
+   - Railway logs should NOT show `TelegramConflictError ... other getUpdates request`
+5. **Test**
+   - Open the bot’s correct `@username` and send `/start`
 
 ---
 
@@ -144,6 +164,7 @@ Preview is built in the flow:
 ### `TelegramConflictError ... other getUpdates request`
 - Same token running in another instance/service
 - Keep only one active poller
+- Most common MVP fix: rotate token + ensure Railway replicas = 1 + delete duplicate services
 
 ### Bot online but no replies
 - Wrong bot username in chat
