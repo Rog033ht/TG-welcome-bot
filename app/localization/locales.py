@@ -66,6 +66,131 @@ LOCALES: dict[str, dict[str, str]] = {
     },
 }
 
+# Global "Old Driver" marketing term bank (2026)
+# Dimensions: core conversion, sports betting, rebate/cashback, finance/trust.
+TERM_BANK: dict[str, dict[str, dict[str, str]]] = {
+    "core": {
+        "ELITE_ACTION": {
+            "en": "Elite Action",
+            "ph": "Lodi Logic",
+            "vi": "Dan Choi VIP",
+            "es": "Accion Pro",
+            "tr": "Baba VIP",
+        },
+        "JOIN_NOW": {
+            "en": "Join Now",
+            "ph": "Sali na, Lodi",
+            "vi": "Tham gia ngay",
+            "es": "Unete ya",
+            "tr": "Hemen Cok",
+        },
+        "REGISTER_NOW": {
+            "en": "Register",
+            "ph": "Mag-Register na",
+            "vi": "Dang ky ngay",
+            "es": "Registrate",
+            "tr": "Kayit Patlat",
+        },
+        "PLAY_NOW": {
+            "en": "Play Now",
+            "ph": "Laro na",
+            "vi": "Chien luon",
+            "es": "Jugar ahora",
+            "tr": "Oyuna Gir",
+        },
+    },
+    "sports": {
+        "SPORTSBOOK": {
+            "en": "Sports Betting",
+            "ph": "Sports Betting",
+            "vi": "Keo Thom",
+            "es": "Pasion Futbolera",
+            "tr": "Mac Gunu",
+        },
+        "BEST_ODDS": {
+            "en": "God-tier Odds",
+            "ph": "Malakas na Odds",
+            "vi": "Ty le Xanh Chin",
+            "es": "Cuotas de Infarto",
+            "tr": "Bomlu Oranlar",
+        },
+        "LIVE_BETTING": {
+            "en": "Live Betting",
+            "ph": "Live na Pagtaya",
+            "vi": "Cuoc Truc Tiep",
+            "es": "Apuestas en Vivo",
+            "tr": "Canli Bahis",
+        },
+        "TODAYS_MATCH": {
+            "en": "Today's Match",
+            "ph": "Laro Ngayon",
+            "vi": "Tran dinh hom nay",
+            "es": "Gran Partido",
+            "tr": "Gunun Maci",
+        },
+    },
+    "rebate": {
+        "UNLIMITED_KICKBACK": {
+            "en": "Unlimited Kickback",
+            "ph": "Balik-Taya Agad",
+            "vi": "Hoan Tien VIP",
+            "es": "Cashback Brutal",
+            "tr": "Aninda Iade",
+        },
+        "DAILY_REBATE": {
+            "en": "Daily Rebate",
+            "ph": "Araw-araw na Balik",
+            "vi": "Hoan tra moi ngay",
+            "es": "Reembolso Diario",
+            "tr": "Gunluk Iade",
+        },
+        "SECOND_CHANCE": {
+            "en": "Second Chance",
+            "ph": "Bawi-Talo",
+            "vi": "Go Gac",
+            "es": "Revancha Total",
+            "tr": "Kayip Telafisi",
+        },
+        "NO_TURNOVER": {
+            "en": "No Turnover",
+            "ph": "Walang Turnover",
+            "vi": "Khong vong cuoc",
+            "es": "Sin Rollover",
+            "tr": "Cevrimsiz",
+        },
+    },
+    "finance": {
+        "SOLID_TRUST": {
+            "en": "Solid Trust",
+            "ph": "Pera Agad",
+            "vi": "Uy Tin 100%",
+            "es": "Plata o Plomo",
+            "tr": "Guvenceli",
+        },
+        "INSTANT_OUT": {
+            "en": "Instant Out",
+            "ph": "Pera Agad",
+            "vi": "Rut Tien Ting Ting",
+            "es": "Retiro Veloz",
+            "tr": "Hizli Cekim",
+        },
+        "MY_WALLET": {
+            "en": "My Wallet",
+            "ph": "Aking Wallet",
+            "vi": "Vi cua toi",
+            "es": "Mi Billetera",
+            "tr": "Cuzdanim",
+        },
+        "VERIFIED": {
+            "en": "Verified",
+            "ph": "Legit / No Scam",
+            "vi": "Da xac minh",
+            "es": "Verificado",
+            "tr": "Onayli Hesap",
+        },
+    },
+}
+
 
 def normalize_lang(code: str | None) -> str:
     if not code:
@@ -80,4 +205,11 @@ def normalize_lang(code: str | None) -> str:
 def t(key: str, lang: str = "en") -> str:
     l = normalize_lang(lang)
     return LOCALES.get(l, LOCALES["en"]).get(key, LOCALES["en"].get(key, key))
+
+
+def term(dimension: str, key: str, lang: str = "en") -> str:
+    l = normalize_lang(lang)
+    block = TERM_BANK.get(dimension, {})
+    entry = block.get(key, {})
+    return entry.get(l) or entry.get("en") or key
 

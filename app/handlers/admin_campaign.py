@@ -11,6 +11,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from app.config import load_settings
 from app.db.sqlite import SqliteDatabase
 from app.filters import IsAdmin
+from app.localization.locales import term
+from app.services.ai_localization import generate_localized_content
 
 router = Router(name="admin_campaign")
 router.message.filter(IsAdmin())
@@ -22,6 +24,9 @@ class CampaignState(StatesGroup):
     caption = State()
     buttons = State()
     confirm = State()
+
+
+LANG_PREVIEW_ORDER = ["ph", "vi", "tr", "es"]
 
 
 def _build_inline_keyboard(rows: list[list[dict]]) -> InlineKeyboardMarkup | None:
@@ -45,6 +50,28 @@ async def operator_help(message: Message) -> None:
         "• <code>/asset_save NAME</code> - Save replied photo/video as reusable file_id\n"
         "• <code>/campaign_cancel</code> - Cancel active builder flow\n\n"
         "Tip: Use <code>/campaign_create</code> for fast channel campaign posting."
+    )
+
+
+@router.message(Command("ops_flow"))
+async def ops_flow(message: Message) -> None:
+    await message.answer(
+        "<b>Operator Ops Flow (Fast)</b>\n\n"
+        "1) Save reusable media:\n"
+        "   Reply to photo/video -> <code>/asset_save promo1</code>\n"
+        "2) Build campaign:\n"
+        "   <code>/campaign_create</code>\n"
+        "3) Enter target, asset, English draft\n"
+        "4) AI gives PH/VI/TR/ES previews\n"
+        "5) Choose language via <code>/use_lang ph</code> (or vi/tr/es/en)\n"
+        "6) Add CTA buttons (<code>Text | https://...</code>)\n"
+        "7) <code>/done</code> -> preview -> <code>/publish</code>\n\n"
+        "<b>CTA Suggestions</b>\n"
+        f"EN: {term('core', 'JOIN_NOW', 'en')} | {term('sports', 'BEST_ODDS', 'en')}\n"
+        f"PH: {term('core', 'JOIN_NOW', 'ph')} | {term('sports', 'BEST_ODDS', 'ph')}\n"
+        f"VI: {term('core', 'JOIN_NOW', 'vi')} | {term('sports', 'BEST_ODDS', 'vi')}\n"
+        f"TR: {term('core', 'JOIN_NOW', 'tr')} | {term('sports', 'BEST_ODDS', 'tr')}\n"
+        f"ES: {term('core', 'JOIN_NOW', 'es')} | {term('sports', 'BEST_ODDS', 'es')}\n"
     )
 
 
@@ -138,17 +165,60 @@ async def campaign_asset(message: Message, state: FSMContext) -> None:
 
 @router.message(CampaignState.caption, F.text)
 async def campaign_caption(message: Message, state: FSMContext) -> None:
-    caption = (message.text or "").strip()
-    await state.update_data(caption=caption, button_rows=[[]])
+    english_caption = (message.text or "").strip()
+    settings = load_settings()
+    translations: dict[str, str] = {"en": english_caption}
+    for code in LANG_PREVIEW_ORDER:
+        translated = await generate_localized_content(
+            english_caption,
+            code,
+            api_key=settings.gemini_api_key,
+            model=settings.gemini_model,
+        )
+        translations[code] = translated
+
+    await state.update_data(caption=english_caption, english_caption=english_caption, translations=translations, selected_lang="en", button_rows=[[]])
     await state.set_state(CampaignState.buttons)
+    await message.answer(
+        "<b>AI Translation Preview</b>\n\n"
+        f"<b>EN</b>: {translations['en']}\n\n"
+        f"<b>PH</b>: {translations['ph']}\n\n"
+        f"<b>VI</b>: {translations['vi']}\n\n"
+        f"<b>TR</b>: {translations['tr']}\n\n"
+        f"<b>ES</b>: {translations['es']}\n\n"
+        "Choose final caption language using:\n"
+        "<code>/use_lang en</code>, <code>/use_lang ph</code>, <code>/use_lang vi</code>, <code>/use_lang tr</code>, <code>/use_lang es</code>"
+    )
     await message.answer(
         "Step 4/5: Add buttons using this format:\n"
         "<code>Button Text | https://your-link.com</code>\n\n"
         "Commands:\n"
+        "• <code>/use_lang xx</code> -> set caption language\n"
         "• <code>/row</code> -> start a new row\n"
         "• <code>/done</code> -> finish and preview\n"
         "• <code>/campaign_cancel</code> -> cancel"
     )
+
+
+@router.message(CampaignState.buttons, Command("use_lang"))
+async def campaign_use_lang(message: Message, state: FSMContext) -> None:
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Usage: <code>/use_lang en|ph|vi|tr|es</code>")
+        return
+    lang = parts[1].strip().lower()
+    if lang not in {"en", "ph", "vi", "tr", "es"}:
+        await message.answer("Invalid language. Use: en, ph, vi, tr, es")
+        return
+
+    data = await state.get_data()
+    translations: dict[str, str] = data.get("translations", {})
+    selected = translations.get(lang)
+    if not selected:
+        await message.answer("No translation found for that language.")
+        return
+    await state.update_data(caption=selected, selected_lang=lang)
+    await message.answer(f"Caption language set to <b>{lang.upper()}</b>.")
 
 
 @router.message(CampaignState.buttons, Command("row"))

@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     admin_ids: str = Field(default="", alias="ADMIN_IDS")
     broadcast_rps: int = Field(default=30, alias="BROADCAST_RPS")
 
+    # Gemini Flash translation
+    gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-1.5-flash", alias="GEMINI_MODEL")
+
     @property
     def admin_id_set(self) -> set[int]:
         raw = (self.admin_ids or "").strip()
