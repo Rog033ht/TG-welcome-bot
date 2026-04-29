@@ -241,3 +241,105 @@ async def poll_end_after_minutes(message: Message, state: FSMContext) -> None:
             disable_web_page_preview=True,
         )
 
+
+@router.message(Command("poll_publish", ignore_mention=True))
+async def poll_publish(message: Message) -> None:
+    """
+    Publish a smart poll button to a target chat (channel/group).
+    Usage: /poll_publish <poll_id> <target_chat>
+    """
+    parts = (message.text or "").split(maxsplit=2)
+    if len(parts) < 3:
+        await message.answer(
+            "Usage: <code>/poll_publish &lt;poll_id&gt; &lt;target_chat&gt;</code>\n"
+            "Example: <code>/poll_publish f080cad9 -1001234567890</code>"
+        )
+        return
+
+    poll_id = parts[1].strip()
+    target_chat = parts[2].strip()
+
+    settings = load_settings()
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    poll = await db.get_smart_poll(poll_id=poll_id)
+    await db.close()
+
+    if not poll:
+        await message.answer("Poll not found. Create it first with <code>/poll_create</code>.")
+        return
+
+    vote_username = (settings.vote_bot_username or "").strip()
+    if not vote_username:
+        # Fallback: try to use this bot's own username (but normally you should set VOTE_BOT_USERNAME).
+        me = await message.bot.me()
+        vote_username = (me.username or "").strip() if me else ""
+
+    if not vote_username:
+        await message.answer("Missing vote bot username. Set <code>VOTE_BOT_USERNAME</code> in env.")
+        return
+
+    vote_url = f"https://t.me/{vote_username}?start=vote_{poll_id}"
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Vote now", url=vote_url)],
+        ]
+    )
+
+    question = poll["question"]
+    base_a = poll["base_a"]
+    base_b = poll["base_b"]
+    end_at = poll.get("end_at")
+
+    text = (
+        f"📊 {question}\n\n"
+        f"A: {poll['option_a']} (base={base_a})\n"
+        f"B: {poll['option_b']} (base={base_b})"
+        + (f"\n\n⏱️ Voting ends at: {end_at}" if end_at else "")
+    )
+
+    # If the poll has an asset name, try to send as photo/video. Otherwise fallback to text.
+    if poll.get("asset_name"):
+        db2 = SqliteDatabase(settings.db_url)
+        await db2.connect()
+        await db2.init_schema()
+        asset = await db2.get_asset(name=poll["asset_name"])
+        await db2.close()
+        if asset:
+            try:
+                if asset.get("file_type") == "photo":
+                    await message.bot.send_photo(
+                        chat_id=target_chat,
+                        photo=asset["file_id"],
+                        caption=text,
+                        reply_markup=kb,
+                    )
+                    await message.answer("Poll published successfully ✅")
+                    return
+                if asset.get("file_type") == "video":
+                    await message.bot.send_video(
+                        chat_id=target_chat,
+                        video=asset["file_id"],
+                        caption=text,
+                        reply_markup=kb,
+                    )
+                    await message.answer("Poll published successfully ✅")
+                    return
+            except Exception:
+                # Fallback to text message.
+                pass
+
+    try:
+        await message.bot.send_message(
+            chat_id=target_chat,
+            text=text,
+            reply_markup=kb,
+            disable_web_page_preview=True,
+        )
+    except Exception:
+        await message.answer("Publish failed. Check bot permission in the target chat.")
+        return
+
+    await message.answer("Poll published successfully ✅")
+
