@@ -9,8 +9,6 @@ from app.config import Settings, load_settings
 from app.db.sqlite import SqliteDatabase
 from app.handlers import router as root_router
 from app.middlewares.user_tracking import UserTrackingMiddleware
-from app.services.broadcasts import BroadcastService
-from app.services.followups import FollowupService
 from app.utils.logging import setup_logging
 from app.utils.process_lock import ProcessLock
 
@@ -34,24 +32,16 @@ async def _run() -> None:
     # long-polling won't receive updates until webhook is removed.
     await bot.delete_webhook(drop_pending_updates=True)
 
-    followups = FollowupService(db=db, settings=settings)
-    broadcasts = BroadcastService(db=db, settings=settings)
-
     dp = Dispatcher(storage=MemoryStorage())
-    # Store services in Dispatcher context (aiogram DI friendly)
+    # Store shared DB in Dispatcher context (aiogram DI friendly)
     dp["db"] = db
-    dp["followups"] = followups
-    dp["broadcasts"] = broadcasts
 
     dp.update.middleware(UserTrackingMiddleware(db=db))
     dp.include_router(root_router)
 
-    scheduler_task = asyncio.create_task(followups.run(bot))
     try:
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
-        await followups.stop()
-        scheduler_task.cancel()
         await db.close()
         lock.release()
 

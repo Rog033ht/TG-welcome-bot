@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -24,12 +24,6 @@ class CampaignState(StatesGroup):
     confirm = State()
 
 
-@dataclass
-class ButtonItem:
-    text: str
-    url: str
-
-
 def _build_inline_keyboard(rows: list[list[dict]]) -> InlineKeyboardMarkup | None:
     if not rows:
         return None
@@ -49,12 +43,42 @@ async def operator_help(message: Message) -> None:
         "<b>Operator Commands (English)</b>\n\n"
         "• <code>/campaign_create</code> - Create a channel promotion post (guided)\n"
         "• <code>/asset_save NAME</code> - Save replied photo/video as reusable file_id\n"
-        "• <code>/broadcast_new asset | caption</code> - Create mass broadcast job\n"
-        "• <code>/broadcast_run ID</code> - Run a broadcast\n"
-        "• <code>/broadcast_pause ID</code> - Pause a broadcast\n"
-        "• <code>/broadcast_status ID</code> - Check broadcast progress\n\n"
+        "• <code>/campaign_cancel</code> - Cancel active builder flow\n\n"
         "Tip: Use <code>/campaign_create</code> for fast channel campaign posting."
     )
+
+
+def _guess_asset_from_reply(message: Message) -> tuple[str, str] | None:
+    if not message.reply_to_message:
+        return None
+    m = message.reply_to_message
+    if m.photo:
+        return ("photo", m.photo[-1].file_id)
+    if m.video:
+        return ("video", m.video.file_id)
+    return None
+
+
+@router.message(Command("asset_save"))
+async def asset_save(message: Message) -> None:
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Reply to a photo/video then send: <code>/asset_save name</code>")
+        return
+    name = parts[1].strip()
+    got = _guess_asset_from_reply(message)
+    if not got:
+        await message.answer("Please reply to a photo or video message first.")
+        return
+    file_type, file_id = got
+
+    settings = load_settings()
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    await db.save_asset(name=name, file_id=file_id, file_type=file_type, created_at=datetime.now(tz=timezone.utc))
+    await db.close()
+    await message.answer(f"Asset saved: <b>{name}</b> ({file_type})")
 
 
 @router.message(Command("campaign_create"))
