@@ -21,6 +21,7 @@ Fast daily-use guide for campaign operators.
 - `/template_list` - list available templates
 - `/template_apply NAME` - apply a template during campaign flow
 - `/template_delete NAME` - delete an existing template
+- `/poll_create` - create a 2-option smart poll config (optional asset + base votes)
 
 ---
 
