@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # Gemini Flash translation
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-1.5-flash", alias="GEMINI_MODEL")
+    gemini_model: str = Field(default="gemini-2.0-flash", alias="GEMINI_MODEL")
 
     @property
     def admin_id_set(self) -> set[int]:

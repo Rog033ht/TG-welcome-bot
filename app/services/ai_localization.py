@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 
-import google.generativeai as genai
+from google import genai
+from loguru import logger
 
 
 LANG_NAME = {
@@ -27,11 +28,19 @@ def _build_prompt(english_text: str, target_lang: str) -> str:
 
 
 def _generate_sync(english_text: str, target_lang: str, api_key: str, model: str) -> str:
-    genai.configure(api_key=api_key)
-    client = genai.GenerativeModel(model_name=model)
-    resp = client.generate_content(_build_prompt(english_text, target_lang))
-    text = (resp.text or "").strip()
-    return text or english_text
+    if not api_key.strip():
+        return english_text
+    try:
+        client = genai.Client(api_key=api_key)
+        resp = client.models.generate_content(
+            model=model,
+            contents=_build_prompt(english_text, target_lang),
+        )
+        text = (getattr(resp, "text", None) or "").strip()
+        return text or english_text
+    except Exception:
+        logger.exception("Gemini localization failed; falling back to English")
+        return english_text
 
 
 async def generate_localized_content(
