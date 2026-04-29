@@ -2,6 +2,11 @@ from __future__ import annotations
 
 SUPPORTED_LANGS = {"en", "ph", "vi", "es", "tr"}
 
+# Telegram / ISO codes that should map into our locale buckets
+_LANG_ALIASES: dict[str, str] = {
+    "fil": "ph",  # Telegram "Filipino" -> Taglish strings (internal code ph)
+}
+
 # Old Driver terms consolidated: EN, PH, VI, ES, TR
 LOCALES: dict[str, dict[str, str]] = {
     "en": {
@@ -199,6 +204,10 @@ def normalize_lang(code: str | None) -> str:
     if c in SUPPORTED_LANGS:
         return c
     c2 = c.split("-", 1)[0]
+    if c in _LANG_ALIASES:
+        return _LANG_ALIASES[c]
+    if c2 in _LANG_ALIASES:
+        return _LANG_ALIASES[c2]
     return c2 if c2 in SUPPORTED_LANGS else "en"
 
 
