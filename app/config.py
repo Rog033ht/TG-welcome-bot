@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
     gemini_model: str = Field(default="gemini-2.0-flash", alias="GEMINI_MODEL")
 
+    # Vote bot deep link target (defaults to this bot's username if blank)
+    vote_bot_username: str = Field(default="", alias="VOTE_BOT_USERNAME")
+
     @property
     def admin_id_set(self) -> set[int]:
         raw = (self.admin_ids or "").strip()

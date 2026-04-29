@@ -153,6 +153,18 @@ class SqliteDatabase(Database):
             );
             """
         )
+        await self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS smart_poll_votes (
+              poll_id TEXT NOT NULL,
+              uid INTEGER NOT NULL,
+              option TEXT NOT NULL CHECK(option IN ('a','b')),
+              created_at TEXT NOT NULL,
+              PRIMARY KEY (poll_id, uid),
+              FOREIGN KEY(poll_id) REFERENCES smart_polls(poll_id) ON DELETE CASCADE
+            );
+            """
+        )
         # Lightweight migration for older DB files
         cur = await self._conn.execute("PRAGMA table_info(smart_polls);")
         cols = [r[1] for r in await cur.fetchall()]
@@ -511,4 +523,97 @@ class SqliteDatabase(Database):
             ),
         )
         await self._conn.commit()
+
+    async def get_smart_poll(self, *, poll_id: str) -> dict | None:
+        assert self._conn is not None
+        cur = await self._conn.execute(
+            """
+            SELECT poll_id, asset_name, question, option_a, option_b, base_a, base_b, created_at
+            FROM smart_polls
+            WHERE poll_id = ?
+            LIMIT 1
+            """,
+            (poll_id,),
+        )
+        row = await cur.fetchone()
+        await cur.close()
+        if not row:
+            return None
+        return {
+            "poll_id": row[0],
+            "asset_name": row[1],
+            "question": row[2],
+            "option_a": row[3],
+            "option_b": row[4],
+            "base_a": int(row[5]),
+            "base_b": int(row[6]),
+            "created_at": row[7],
+        }
+
+    async def upsert_smart_poll_vote(
+        self,
+        *,
+        poll_id: str,
+        uid: int,
+        option: str,
+        created_at: datetime,
+    ) -> None:
+        assert self._conn is not None
+        opt = option.strip().lower()
+        if opt not in {"a", "b"}:
+            raise ValueError("option must be 'a' or 'b'")
+        await self._conn.execute(
+            """
+            INSERT INTO smart_poll_votes (poll_id, uid, option, created_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(poll_id, uid) DO UPDATE SET
+              option=excluded.option,
+              created_at=excluded.created_at
+            """,
+            (poll_id, uid, opt, created_at.isoformat(timespec="seconds")),
+        )
+        await self._conn.commit()
+
+    async def get_smart_poll_results(self, *, poll_id: str) -> dict | None:
+        assert self._conn is not None
+        cur = await self._conn.execute(
+            """
+            SELECT
+              sp.poll_id,
+              sp.asset_name,
+              sp.question,
+              sp.option_a,
+              sp.option_b,
+              sp.base_a,
+              sp.base_b,
+              COALESCE(SUM(CASE WHEN spv.option = 'a' THEN 1 ELSE 0 END), 0) AS votes_a,
+              COALESCE(SUM(CASE WHEN spv.option = 'b' THEN 1 ELSE 0 END), 0) AS votes_b
+            FROM smart_polls sp
+            LEFT JOIN smart_poll_votes spv
+              ON spv.poll_id = sp.poll_id
+            WHERE sp.poll_id = ?
+            GROUP BY sp.poll_id
+            LIMIT 1
+            """,
+            (poll_id,),
+        )
+        row = await cur.fetchone()
+        await cur.close()
+        if not row:
+            return None
+        votes_a = int(row[7])
+        votes_b = int(row[8])
+        return {
+            "poll_id": row[0],
+            "asset_name": row[1],
+            "question": row[2],
+            "option_a": row[3],
+            "option_b": row[4],
+            "base_a": int(row[5]),
+            "base_b": int(row[6]),
+            "votes_a": votes_a,
+            "votes_b": votes_b,
+            "count_a": int(row[5]) + votes_a,
+            "count_b": int(row[6]) + votes_b,
+        }
 

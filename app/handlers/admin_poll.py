@@ -7,7 +7,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.config import load_settings
 from app.db.sqlite import SqliteDatabase
@@ -182,4 +182,24 @@ async def poll_base_b(message: Message, state: FSMContext) -> None:
         f"B: {option_b} (base={base_b})\n\n"
         "You can now wire this poll_id into future flows or broadcasts."
     )
+
+    # Deep link activation button: https://t.me/<VoteBotUsername>?start=vote_<poll_id>
+    vote_username = (settings.vote_bot_username or "").strip()
+    if not vote_username:
+        me = await message.bot.me()
+        vote_username = (me.username or "").strip() if me else ""
+    if vote_username:
+        vote_url = f"https://t.me/{vote_username}?start=vote_{poll_id}"
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Vote now", url=vote_url)],
+            ]
+        )
+        await message.answer(
+            "<b>Poll activation</b>\n"
+            "Send this button to users:\n"
+            f"{vote_url}",
+            reply_markup=kb,
+            disable_web_page_preview=True,
+        )
 

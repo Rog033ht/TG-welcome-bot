@@ -145,3 +145,19 @@ class Database(ABC):
         created_at: datetime,
     ) -> None: ...
 
+    @abstractmethod
+    async def get_smart_poll(self, *, poll_id: str) -> dict | None: ...
+
+    @abstractmethod
+    async def upsert_smart_poll_vote(
+        self,
+        *,
+        poll_id: str,
+        uid: int,
+        option: str,
+        created_at: datetime,
+    ) -> None: ...
+
+    @abstractmethod
+    async def get_smart_poll_results(self, *, poll_id: str) -> dict | None: ...
+
