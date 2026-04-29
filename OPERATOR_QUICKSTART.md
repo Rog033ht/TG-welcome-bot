@@ -8,7 +8,6 @@ Fast daily-use guide for campaign operators.
 - Bot is added as admin in target channel (can post messages)
 - Bot is online in Railway
 - Railway service **Replicas = 1** (polling bots)
-- Optional AI previews: set `GEMINI_API_KEY` (+ `GEMINI_MODEL` if you want)
 
 ---
 
@@ -18,6 +17,10 @@ Fast daily-use guide for campaign operators.
 - `/asset_save NAME` - save replied photo/video as reusable asset
 - `/campaign_create` - guided campaign builder
 - `/campaign_cancel` - cancel current builder session
+- `/template_save NAME` - save current button layout as template
+- `/template_list` - list available templates
+- `/template_apply NAME` - apply a template during campaign flow
+- `/template_delete NAME` - delete an existing template
 
 ---
 
@@ -44,7 +47,7 @@ Important:
 2. Step 1: target channel/chat
    - `@your_channel` or `-1001234567890`
 3. Step 2: asset name (e.g. `promo1`) or `skip`
-4. Step 3: caption text
+4. Step 3: caption text (manual)
 5. Step 4: buttons
    - Format: `Button Text | https://link.com`
    - `/row` = new row
@@ -55,6 +58,10 @@ Important:
 
 Cancel anytime:
 - `/campaign_cancel`
+
+Template shortcut:
+- after Step 2 (asset), send `/template_apply NAME`
+- bot loads saved button layout (your caption stays unchanged)
 
 ---
 
@@ -71,6 +78,16 @@ Cancel anytime:
    - `Claim Now | https://example.com/claim`
    - `Support | https://t.me/my_support`
    - `/done`
+   - `/publish`
+
+3. Save reusable template from active campaign:
+   - `/template_save welcome_v1`
+
+4. Next time (new asset only):
+   - `/campaign_create`
+   - `@my_channel`
+   - `new_asset_today`
+   - `/template_apply welcome_v1`
    - `/publish`
 
 ---
@@ -92,6 +109,10 @@ Cancel anytime:
   - Check Railway logs for startup errors
   - Confirm correct `BOT_TOKEN`
   - Confirm you are chatting with correct bot username
+
+- **Template not found**
+  - Check available names with `/template_list`
+  - Template names are exact; avoid extra spaces
 
 - **Conflict: other getUpdates request**
   - Same token running in another service/device

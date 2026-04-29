@@ -18,7 +18,7 @@ LOCALES: dict[str, dict[str, str]] = {
         "HELP_TEMPLATE_MGMT": (
             "<b>Template Manager</b>\n\n"
             "<code>/template_list</code> — View template names\n"
-            "<code>/template_save NAME</code> — Save current campaign caption + buttons\n"
+            "<code>/template_save NAME</code> — Save current button layout\n"
             "<code>/template_apply NAME</code> — Apply template inside campaign flow\n"
             "<code>/template_delete NAME</code> — Delete a template\n\n"
             "Note: These are admin-only commands."
@@ -59,7 +59,7 @@ LOCALES: dict[str, dict[str, str]] = {
         "HELP_TEMPLATE_MGMT": (
             "<b>Template Manager</b>\n\n"
             "<code>/template_list</code> — List ng template names\n"
-            "<code>/template_save NAME</code> — Save current campaign caption + buttons\n"
+            "<code>/template_save NAME</code> — Save current button layout\n"
             "<code>/template_apply NAME</code> — Apply template sa campaign flow\n"
             "<code>/template_delete NAME</code> — Delete template\n\n"
             "Note: Admin-only commands ito."
@@ -100,7 +100,7 @@ LOCALES: dict[str, dict[str, str]] = {
         "HELP_TEMPLATE_MGMT": (
             "<b>Quan Ly Template</b>\n\n"
             "<code>/template_list</code> — Xem danh sach template\n"
-            "<code>/template_save NAME</code> — Luu caption + buttons hien tai\n"
+            "<code>/template_save NAME</code> — Luu bo cuc buttons hien tai\n"
             "<code>/template_apply NAME</code> — Ap dung template trong campaign\n"
             "<code>/template_delete NAME</code> — Xoa template\n\n"
             "Luu y: Lenh chi danh cho admin."
@@ -141,7 +141,7 @@ LOCALES: dict[str, dict[str, str]] = {
         "HELP_TEMPLATE_MGMT": (
             "<b>Gestor de Plantillas</b>\n\n"
             "<code>/template_list</code> — Ver nombres de plantillas\n"
-            "<code>/template_save NAME</code> — Guardar caption + botones actuales\n"
+            "<code>/template_save NAME</code> — Guardar layout de botones actual\n"
             "<code>/template_apply NAME</code> — Aplicar plantilla en flujo campaign\n"
             "<code>/template_delete NAME</code> — Eliminar plantilla\n\n"
             "Nota: Comandos solo para admin."
@@ -182,7 +182,7 @@ LOCALES: dict[str, dict[str, str]] = {
         "HELP_TEMPLATE_MGMT": (
             "<b>Template Yonetimi</b>\n\n"
             "<code>/template_list</code> — Template adlarini listele\n"
-            "<code>/template_save NAME</code> — Mevcut caption + butonlari kaydet\n"
+            "<code>/template_save NAME</code> — Mevcut buton duzenini kaydet\n"
             "<code>/template_apply NAME</code> — Campaign akisi icinde template uygula\n"
             "<code>/template_delete NAME</code> — Template sil\n\n"
             "Not: Bu komutlar sadece admin icindir."

@@ -398,7 +398,6 @@ class SqliteDatabase(Database):
         self,
         *,
         name: str,
-        caption: str,
         button_rows: list[list[dict]],
         created_at: datetime,
     ) -> None:
@@ -414,7 +413,7 @@ class SqliteDatabase(Database):
               buttons_json=excluded.buttons_json,
               updated_at=excluded.updated_at
             """,
-            (name, caption, buttons_json, now, now),
+            (name, "", buttons_json, now, now),
         )
         await self._conn.commit()
 

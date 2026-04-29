@@ -66,7 +66,7 @@ async def operator_help(message: Message) -> None:
         "<b>Operator Commands (English)</b>\n\n"
         "• <code>/campaign_create</code> - Create a channel promotion post (guided)\n"
         "• <code>/asset_save NAME</code> - Save replied photo/video as reusable file_id\n"
-        "• <code>/template_save NAME</code> - Save current caption + buttons as template\n"
+        "• <code>/template_save NAME</code> - Save current button layout as template\n"
         "• <code>/template_apply NAME</code> - Apply template in Step 3/4 (after asset)\n"
         "• <code>/template_delete NAME</code> - Delete a saved template\n"
         "• <code>/template_list</code> - List available templates\n"
@@ -259,10 +259,9 @@ async def template_save(message: Message, state: FSMContext) -> None:
         return
     name = parts[1].strip().lower()
     data = await state.get_data()
-    caption = str(data.get("caption") or "").strip()
     rows: list[list[dict]] = [row for row in data.get("button_rows", []) if row]
-    if not caption:
-        await message.answer("No active campaign content found. Build one first, then save template.")
+    if not rows:
+        await message.answer("No button layout found. Add buttons first, then save template.")
         return
     settings = load_settings()
     db = SqliteDatabase(settings.db_url)
@@ -270,7 +269,6 @@ async def template_save(message: Message, state: FSMContext) -> None:
     await db.init_schema()
     await db.save_campaign_template(
         name=name,
-        caption=caption,
         button_rows=rows,
         created_at=datetime.now(tz=timezone.utc),
     )
@@ -315,9 +313,12 @@ async def template_apply(message: Message, state: FSMContext) -> None:
         await message.answer("Template not found. Check <code>/template_list</code>.")
         return
     rows = [row for row in tpl.get("button_rows", []) if row]
-    await state.update_data(caption=tpl["caption"], button_rows=rows, selected_lang="template")
-    await message.answer(f"Template applied: <b>{name}</b>")
-    await _send_campaign_preview(message, state)
+    await state.update_data(button_rows=rows)
+    await state.set_state(CampaignState.buttons)
+    await message.answer(
+        f"Template applied: <b>{name}</b> ({sum(len(r) for r in rows)} buttons)\n"
+        "You can add/edit buttons now, then send <code>/done</code>."
+    )
 
 
 @router.message(CampaignState.confirm, Command("publish", ignore_mention=True))

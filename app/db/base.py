@@ -117,7 +117,6 @@ class Database(ABC):
         self,
         *,
         name: str,
-        caption: str,
         button_rows: list[list[dict]],
         created_at: datetime,
     ) -> None: ...
