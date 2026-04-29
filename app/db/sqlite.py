@@ -139,6 +139,26 @@ class SqliteDatabase(Database):
             );
             """
         )
+        await self._conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS smart_polls (
+              poll_id TEXT PRIMARY KEY,
+              asset_name TEXT,
+              question TEXT NOT NULL,
+              option_a TEXT NOT NULL,
+              option_b TEXT NOT NULL,
+              base_a INTEGER NOT NULL,
+              base_b INTEGER NOT NULL,
+              created_at TEXT NOT NULL
+            );
+            """
+        )
+        # Lightweight migration for older DB files
+        cur = await self._conn.execute("PRAGMA table_info(smart_polls);")
+        cols = [r[1] for r in await cur.fetchall()]
+        await cur.close()
+        if "asset_name" not in cols:
+            await self._conn.execute("ALTER TABLE smart_polls ADD COLUMN asset_name TEXT;")
         await self._conn.commit()
 
     async def upsert_user(self, user: UserUpsert) -> None:
@@ -460,4 +480,35 @@ class SqliteDatabase(Database):
         cur = await self._conn.execute("DELETE FROM campaign_templates WHERE name = ?", (name,))
         await self._conn.commit()
         return int(cur.rowcount or 0) > 0
+
+    async def save_smart_poll(
+        self,
+        *,
+        poll_id: str,
+        asset_name: str | None,
+        question: str,
+        option_a: str,
+        option_b: str,
+        base_a: int,
+        base_b: int,
+        created_at: datetime,
+    ) -> None:
+        assert self._conn is not None
+        await self._conn.execute(
+            """
+            INSERT INTO smart_polls (poll_id, asset_name, question, option_a, option_b, base_a, base_b, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                poll_id,
+                asset_name,
+                question,
+                option_a,
+                option_b,
+                int(base_a),
+                int(base_b),
+                created_at.isoformat(timespec="seconds"),
+            ),
+        )
+        await self._conn.commit()
 

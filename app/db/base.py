@@ -130,3 +130,18 @@ class Database(ABC):
     @abstractmethod
     async def delete_campaign_template(self, *, name: str) -> bool: ...
 
+    # Smart polls
+    @abstractmethod
+    async def save_smart_poll(
+        self,
+        *,
+        poll_id: str,
+        asset_name: str | None,
+        question: str,
+        option_a: str,
+        option_b: str,
+        base_a: int,
+        base_b: int,
+        created_at: datetime,
+    ) -> None: ...
+
