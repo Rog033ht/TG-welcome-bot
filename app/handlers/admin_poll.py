@@ -172,11 +172,12 @@ async def poll_base_b(message: Message, state: FSMContext) -> None:
     await db.close()
     await state.clear()
 
+    asset_line = f"Asset: <code>{asset_name}</code>\n" if asset_name else ""
     await message.answer(
         "<b>Smart poll saved</b>\n\n"
         f"ID: <code>{poll_id}</code>\n"
-        (f"Asset: <code>{asset_name}</code>\n" if asset_name else "")
-        + f"Question: {question}\n"
+        f"{asset_line}"
+        f"Question: {question}\n"
         f"A: {option_a} (base={base_a})\n"
         f"B: {option_b} (base={base_b})\n\n"
         "You can now wire this poll_id into future flows or broadcasts."
