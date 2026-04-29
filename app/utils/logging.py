@@ -24,7 +24,9 @@ def setup_logging(level: str = "INFO") -> None:
     logging.root.setLevel(level)
 
     for name in ("aiogram", "aiohttp"):
-        logging.getLogger(name).handlers = [_InterceptHandler()]
+        lib_logger = logging.getLogger(name)
+        lib_logger.handlers = []
+        lib_logger.propagate = True
 
     logger.remove()
     logger.add(sys.stderr, level=level, backtrace=False, diagnose=False)

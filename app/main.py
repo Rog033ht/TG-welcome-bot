@@ -12,11 +12,15 @@ from app.middlewares.user_tracking import UserTrackingMiddleware
 from app.services.broadcasts import BroadcastService
 from app.services.followups import FollowupService
 from app.utils.logging import setup_logging
+from app.utils.process_lock import ProcessLock
 
 
 async def _run() -> None:
     settings: Settings = load_settings()
     setup_logging(settings.log_level)
+    lock = ProcessLock(key=settings.bot_token)
+    if not lock.acquire():
+        raise RuntimeError("Another bot instance is already running for this token.")
 
     db = SqliteDatabase(settings.db_url)
     await db.connect()
@@ -49,6 +53,7 @@ async def _run() -> None:
         await followups.stop()
         scheduler_task.cancel()
         await db.close()
+        lock.release()
 
 
 def main() -> None:
