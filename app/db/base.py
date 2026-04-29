@@ -128,3 +128,6 @@ class Database(ABC):
     @abstractmethod
     async def list_campaign_templates(self, *, limit: int = 20) -> list[dict]: ...
 
+    @abstractmethod
+    async def delete_campaign_template(self, *, name: str) -> bool: ...
+

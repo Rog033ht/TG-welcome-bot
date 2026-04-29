@@ -21,5 +21,11 @@ def main_menu_kb(*, lang: str) -> InlineKeyboardMarkup:
                     callback_data="menu:demo_post",
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text=t("BTN_TEMPLATE_MGMT", lang),
+                    callback_data="menu:templates",
+                ),
+            ],
         ]
     )

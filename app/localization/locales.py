@@ -14,6 +14,15 @@ LOCALES: dict[str, dict[str, str]] = {
         "WELCOME_SUB": "Pick an action below — view all commands or try a sample post.",
         "BTN_ALL_COMMANDS": "📋 All commands",
         "BTN_DEMO_POST": "🔥 Sample post",
+        "BTN_TEMPLATE_MGMT": "🧩 Template manager",
+        "HELP_TEMPLATE_MGMT": (
+            "<b>Template Manager</b>\n\n"
+            "<code>/template_list</code> — View template names\n"
+            "<code>/template_save NAME</code> — Save current campaign caption + buttons\n"
+            "<code>/template_apply NAME</code> — Apply template inside campaign flow\n"
+            "<code>/template_delete NAME</code> — Delete a template\n\n"
+            "Note: These are admin-only commands."
+        ),
         "HELP_COMMANDS": (
             "<b>What This Bot Can Do</b>\n\n"
             "<b>User Commands</b>\n"
@@ -46,6 +55,15 @@ LOCALES: dict[str, dict[str, str]] = {
         "WELCOME_SUB": "Pili ka sa buttons below — tingnan lahat ng commands o subukan ang sample post.",
         "BTN_ALL_COMMANDS": "📋 Lahat ng commands",
         "BTN_DEMO_POST": "🔥 Sample post",
+        "BTN_TEMPLATE_MGMT": "🧩 Template manager",
+        "HELP_TEMPLATE_MGMT": (
+            "<b>Template Manager</b>\n\n"
+            "<code>/template_list</code> — List ng template names\n"
+            "<code>/template_save NAME</code> — Save current campaign caption + buttons\n"
+            "<code>/template_apply NAME</code> — Apply template sa campaign flow\n"
+            "<code>/template_delete NAME</code> — Delete template\n\n"
+            "Note: Admin-only commands ito."
+        ),
         "HELP_COMMANDS": (
             "<b>Kayang Gawin ng Bot</b>\n\n"
             "<b>User Commands</b>\n"
@@ -78,6 +96,15 @@ LOCALES: dict[str, dict[str, str]] = {
         "WELCOME_SUB": "Chon ben duoi: xem tat ca lenh hoac thu bai demo.",
         "BTN_ALL_COMMANDS": "📋 Tat ca lenh",
         "BTN_DEMO_POST": "🔥 Bai demo",
+        "BTN_TEMPLATE_MGMT": "🧩 Quan ly template",
+        "HELP_TEMPLATE_MGMT": (
+            "<b>Quan Ly Template</b>\n\n"
+            "<code>/template_list</code> — Xem danh sach template\n"
+            "<code>/template_save NAME</code> — Luu caption + buttons hien tai\n"
+            "<code>/template_apply NAME</code> — Ap dung template trong campaign\n"
+            "<code>/template_delete NAME</code> — Xoa template\n\n"
+            "Luu y: Lenh chi danh cho admin."
+        ),
         "HELP_COMMANDS": (
             "<b>Chuc Nang Bot</b>\n\n"
             "<b>Lenh nguoi dung</b>\n"
@@ -110,6 +137,15 @@ LOCALES: dict[str, dict[str, str]] = {
         "WELCOME_SUB": "Elige abajo: ver todos los comandos o probar un post de ejemplo.",
         "BTN_ALL_COMMANDS": "📋 Todos los comandos",
         "BTN_DEMO_POST": "🔥 Post de ejemplo",
+        "BTN_TEMPLATE_MGMT": "🧩 Gestor de plantillas",
+        "HELP_TEMPLATE_MGMT": (
+            "<b>Gestor de Plantillas</b>\n\n"
+            "<code>/template_list</code> — Ver nombres de plantillas\n"
+            "<code>/template_save NAME</code> — Guardar caption + botones actuales\n"
+            "<code>/template_apply NAME</code> — Aplicar plantilla en flujo campaign\n"
+            "<code>/template_delete NAME</code> — Eliminar plantilla\n\n"
+            "Nota: Comandos solo para admin."
+        ),
         "HELP_COMMANDS": (
             "<b>Funciones Del Bot</b>\n\n"
             "<b>Comandos de usuario</b>\n"
@@ -142,6 +178,15 @@ LOCALES: dict[str, dict[str, str]] = {
         "WELCOME_SUB": "Asagidan sec: tum komutlar veya ornek bir gonderi.",
         "BTN_ALL_COMMANDS": "📋 Tum komutlar",
         "BTN_DEMO_POST": "🔥 Ornek gonderi",
+        "BTN_TEMPLATE_MGMT": "🧩 Template yonetimi",
+        "HELP_TEMPLATE_MGMT": (
+            "<b>Template Yonetimi</b>\n\n"
+            "<code>/template_list</code> — Template adlarini listele\n"
+            "<code>/template_save NAME</code> — Mevcut caption + butonlari kaydet\n"
+            "<code>/template_apply NAME</code> — Campaign akisi icinde template uygula\n"
+            "<code>/template_delete NAME</code> — Template sil\n\n"
+            "Not: Bu komutlar sadece admin icindir."
+        ),
         "HELP_COMMANDS": (
             "<b>Bot Ozellikleri</b>\n\n"
             "<b>Kullanici komutlari</b>\n"

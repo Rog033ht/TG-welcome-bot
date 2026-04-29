@@ -456,3 +456,9 @@ class SqliteDatabase(Database):
         await cur.close()
         return [{"name": r[0], "updated_at": r[1]} for r in rows]
 
+    async def delete_campaign_template(self, *, name: str) -> bool:
+        assert self._conn is not None
+        cur = await self._conn.execute("DELETE FROM campaign_templates WHERE name = ?", (name,))
+        await self._conn.commit()
+        return int(cur.rowcount or 0) > 0
+

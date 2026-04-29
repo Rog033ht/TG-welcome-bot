@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from aiogram import F, Router
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
@@ -12,7 +12,6 @@ from app.config import load_settings
 from app.db.sqlite import SqliteDatabase
 from app.filters import IsAdmin
 from app.localization.locales import term
-from app.services.ai_localization import generate_campaign_translations, non_en_locales_match_english
 
 router = Router(name="admin_campaign")
 router.message.filter(IsAdmin())
@@ -24,9 +23,6 @@ class CampaignState(StatesGroup):
     caption = State()
     buttons = State()
     confirm = State()
-
-
-LANG_PREVIEW_ORDER = ["ph", "vi", "tr", "es"]
 
 
 def _build_inline_keyboard(rows: list[list[dict]]) -> InlineKeyboardMarkup | None:
@@ -72,6 +68,7 @@ async def operator_help(message: Message) -> None:
         "• <code>/asset_save NAME</code> - Save replied photo/video as reusable file_id\n"
         "• <code>/template_save NAME</code> - Save current caption + buttons as template\n"
         "• <code>/template_apply NAME</code> - Apply template in Step 3/4 (after asset)\n"
+        "• <code>/template_delete NAME</code> - Delete a saved template\n"
         "• <code>/template_list</code> - List available templates\n"
         "• <code>/campaign_cancel</code> - Cancel active builder flow\n\n"
         "Tip: Use <code>/campaign_create</code> for fast channel campaign posting."
@@ -189,81 +186,16 @@ async def campaign_asset(message: Message, state: FSMContext) -> None:
 
 @router.message(CampaignState.caption, F.text & ~F.text.startswith("/"))
 async def campaign_caption(message: Message, state: FSMContext) -> None:
-    english_caption = (message.text or "").strip()
-    settings = load_settings()
-    translations: dict[str, str] = {"en": english_caption}
-    batch = await generate_campaign_translations(
-        english_caption,
-        locale_codes=tuple(LANG_PREVIEW_ORDER),
-        api_key=settings.gemini_api_key,
-        model=settings.gemini_model,
-    )
-    for code in LANG_PREVIEW_ORDER:
-        translations[code] = batch.get(code, english_caption)
-
-    await state.update_data(caption=english_caption, english_caption=english_caption, translations=translations, selected_lang="en", button_rows=[[]])
+    caption = (message.text or "").strip()
+    await state.update_data(caption=caption, button_rows=[[]])
     await state.set_state(CampaignState.buttons)
     await message.answer(
-        "<b>AI Translation Preview</b>\n\n"
-        f"<b>EN</b>: {translations['en']}\n\n"
-        f"<b>PH</b>: {translations['ph']}\n\n"
-        f"<b>VI</b>: {translations['vi']}\n\n"
-        f"<b>TR</b>: {translations['tr']}\n\n"
-        f"<b>ES</b>: {translations['es']}\n\n"
-        "Choose final caption language using:\n"
-        "<code>/use_lang en</code>, <code>/use_lang ph</code>, <code>/use_lang vi</code>, <code>/use_lang tr</code>, <code>/use_lang es</code>"
-    )
-    await message.answer(
-        "Step 4/5: Add buttons using this format:\n"
+        "Step 4/5: Add CTA buttons using this format:\n"
         "<code>Button Text | https://your-link.com</code>\n\n"
         "Commands:\n"
-        "• <code>/use_lang xx</code> -> set caption language\n"
         "• <code>/row</code> -> start a new row\n"
         "• <code>/done</code> -> finish and preview\n"
         "• <code>/campaign_cancel</code> -> cancel"
-    )
-
-    if not (settings.gemini_api_key or "").strip():
-        await message.answer(
-            "⚠️ <b>GEMINI_API_KEY</b> is not set — PH/VI/TR/ES blocks above are <b>English copies</b>. "
-            "Set the variable on Railway (or <code>.env</code> locally), redeploy, then run <code>/campaign_create</code> again."
-        )
-    elif non_en_locales_match_english(translations):
-        await message.answer(
-            "⚠️ Gemini did not return usable translations (all blocks still match English). "
-            "Common causes: <b>429 / free-tier quota</b> (wait ~1 min or enable billing in Google AI Studio), "
-            "safety blocks, or bad JSON from the model. "
-            "Check deploy logs; optional: change <code>GEMINI_MODEL</code> to another Gemini id that still has quota on your API key."
-        )
-
-
-@router.message(CampaignState.buttons, Command("use_lang", ignore_mention=True))
-async def campaign_use_lang(message: Message, state: FSMContext) -> None:
-    parts = (message.text or "").split(maxsplit=1)
-    if len(parts) < 2:
-        await message.answer("Usage: <code>/use_lang en|ph|vi|tr|es</code>")
-        return
-    lang = parts[1].strip().lower()
-    if lang not in {"en", "ph", "vi", "tr", "es"}:
-        await message.answer("Invalid language. Use: en, ph, vi, tr, es")
-        return
-
-    data = await state.get_data()
-    translations: dict[str, str] = data.get("translations", {})
-    selected = translations.get(lang)
-    if not selected:
-        await message.answer("No translation found for that language.")
-        return
-    await state.update_data(caption=selected, selected_lang=lang)
-    await message.answer(f"Caption language set to <b>{lang.upper()}</b>.")
-
-
-@router.message(~StateFilter(CampaignState.buttons), Command("use_lang", ignore_mention=True))
-async def campaign_use_lang_wrong_step(message: Message) -> None:
-    await message.answer(
-        "⚠️ <code>/use_lang</code> only works in <b>campaign Step 4</b> (right after you send the English caption).\n\n"
-        "• If you have not started: <code>/campaign_create</code>\n"
-        "• If the bot / Railway just restarted: FSM is in-memory — run <code>/campaign_create</code> again from Step 1."
     )
 
 
@@ -344,6 +276,25 @@ async def template_save(message: Message, state: FSMContext) -> None:
     )
     await db.close()
     await message.answer(f"Template saved: <b>{name}</b> ({sum(len(r) for r in rows)} buttons)")
+
+
+@router.message(Command("template_delete", ignore_mention=True))
+async def template_delete(message: Message) -> None:
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer("Usage: <code>/template_delete NAME</code>")
+        return
+    name = parts[1].strip().lower()
+    settings = load_settings()
+    db = SqliteDatabase(settings.db_url)
+    await db.connect()
+    await db.init_schema()
+    ok = await db.delete_campaign_template(name=name)
+    await db.close()
+    if not ok:
+        await message.answer("Template not found.")
+        return
+    await message.answer(f"Template deleted: <b>{name}</b>")
 
 
 @router.message(CampaignState.caption, Command("template_apply", ignore_mention=True))

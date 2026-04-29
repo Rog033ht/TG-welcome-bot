@@ -32,6 +32,15 @@ async def menu_demo_post(cb: CallbackQuery, lang: str = "en") -> None:
     await send_post_demo(cb.message, lang=lang)
 
 
+@router.callback_query(F.data == "menu:templates")
+async def menu_templates(cb: CallbackQuery, lang: str = "en") -> None:
+    if not cb.message:
+        await cb.answer()
+        return
+    await cb.answer()
+    await cb.message.answer(t("HELP_TEMPLATE_MGMT", lang), disable_web_page_preview=True)
+
+
 @router.callback_query(F.data.startswith("cta:"))
 async def cta_click(cb: CallbackQuery) -> None:
     """
