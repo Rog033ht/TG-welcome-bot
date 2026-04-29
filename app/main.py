@@ -35,6 +35,7 @@ async def _run() -> None:
 
     dp = Dispatcher(storage=MemoryStorage())
     # Store services in Dispatcher context (aiogram DI friendly)
+    dp["db"] = db
     dp["followups"] = followups
     dp["broadcasts"] = broadcasts
 
